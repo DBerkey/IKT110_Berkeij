@@ -30,10 +30,17 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000):
     # Create a lambda function for curve_fit, accepting all x variants and params
     func = sp.lambdify((*x_syms, *params), expr, modules=['numpy'])
 
-    # Parse the loss function formula
-    y_true_sym, y_pred_sym = sp.symbols('y_true y_pred')    
-    loss_expr = sp.sympify(loss_func)
-    loss_func_sympy = sp.lambdify((y_true_sym, y_pred_sym), loss_expr, modules=['numpy'])
+    try: 
+        # Parse the loss function formula
+        y_true_sym, y_pred_sym = sp.symbols('y_true y_pred')
+        if 'y_true' not in loss_func or 'y_pred' not in loss_func:
+            print("Please use y_true and y_pred in the loss function.")
+            return
+        loss_expr = sp.sympify(loss_func)
+        loss_func_sympy = sp.lambdify((y_true_sym, y_pred_sym), loss_expr, modules=['numpy'])
+    except TypeError as e:
+        print("Please use y_true and y_pred in the loss function.", e)
+        return
 
     def loss_func_eval(y_true_np, y_pred_np):
         losses = loss_func_sympy(y_true_np, y_pred_np) 
