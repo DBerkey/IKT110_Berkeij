@@ -69,7 +69,6 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000):
 
     best_params = None
     best_loss = float('inf')
-    np.random.seed(0)
     accuracy = 0.1
     improvement = float('inf')
     param_range = (-10, 10)
