@@ -11,19 +11,19 @@ import pandas as pd
 
 def fortuna_algorithm(x_data, y_data, formula_str, loss_func):
 	# Parse the formula string into a sympy expression
-    x = sp.symbols('x')
+    x, x1, x2, x3 = sp.symbols('x, x1, x2, x3')
     expr = sp.sympify(formula_str)
 
     # Extract parameter symbols (all symbols except 'x')
-    params = sorted(expr.free_symbols - {x}, key=lambda s: s.name)
+    params = sorted(expr.free_symbols - {x, x1, x2, x3}, key=lambda s: s.name)
     param_names = [str(p) for p in params]
 
     # Create a lambda function for curve_fit
-    func = sp.lambdify((x, *params), expr, modules=['numpy'])
+    func = sp.lambdify((x, x1, x2, x3, *params), expr, modules=['numpy'])
 
     # Parse the loss function formula
-    y_true_sym, y_pred_sym = sp.symbols('y_true y_pred')
-    loss_expr = sp.sympify(loss_formula)
+    y_true_sym, y_pred_sym = sp.symbols('y_true y_pred')    
+    loss_expr = sp.sympify(loss_func)
     loss_func_sympy = sp.lambdify((y_true_sym, y_pred_sym), loss_expr, modules=['numpy'])
 
     def loss_func_eval(y_true_np, y_pred_np):
@@ -35,7 +35,13 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func):
     x_test, y_test = test_data
 
     def fit_func(x, *param_values):
-        return func(x, *param_values)
+        # If x is a 2D array, unpack columns as x1, x2, x3
+        if isinstance(x, np.ndarray) and x.ndim == 2 and x.shape[1] == 3:
+            x1, x2, x3 = x[:, 0], x[:, 1], x[:, 2]
+            return func(None, x1, x2, x3, *param_values)
+        else:
+            # fallback for 1D or other cases
+            return func(x, *param_values)
 
     best_params = None
     best_loss = float('inf')
