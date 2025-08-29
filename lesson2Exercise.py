@@ -17,9 +17,9 @@ def runFortuna(dataX, dataY):
     print("dataY shape:", dataY.shape)
 
     # Call the fortuna_algorithm function
-    formula = "a*x1**2+b*log(x2)+c*sqrt(x3)+d"
+    formula = "a*x1+b*x2+c*x3+d"
     loss_func = "mean((y_true - y_pred)**2)"
-    fa.fortuna_algorithm(dataX, dataY, formula, loss_func)
+    fa.fortuna_algorithm(dataX, dataY, formula, loss_func, max_iter=1000000)
 
 def processFile(lineJSON):
     with open(lineJSON, 'r') as file:

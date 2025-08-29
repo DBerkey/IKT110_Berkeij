@@ -9,7 +9,7 @@ import numpy as np
 import argparse as ap
 import pandas as pd
 
-def fortuna_algorithm(x_data, y_data, formula_str, loss_func):
+def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000):
 	# Parse the formula string into a sympy expression
     x, x1, x2, x3 = sp.symbols('x, x1, x2, x3')
     expr = sp.sympify(formula_str)
@@ -48,7 +48,6 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func):
     np.random.seed(0)
     accuracy = 0.1
     improvement = float('inf')
-    max_iter = 10000
     param_range = (-10, 10)
     iter_count = 0
 
