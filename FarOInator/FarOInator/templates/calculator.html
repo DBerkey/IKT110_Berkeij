@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Distanci-nator 5000</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 2em; }
+        select, button { padding: 0.5em; margin: 0.5em; }
+        .result { margin-top: 1em; font-size: 1.5em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔮 Distanci-nator 5000</h1>
+    <p>Select the hole size you used:</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <select name="hole">
+            {% for h in holes %}
+                <option value="{{h}}" {% if h == hole %}selected{% endif %}>{{h}} mm</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Calculate</button>
+    </form>
+
+    {% if distance %}
+        <div class="result">Estimated distance: {{distance}} m</div>
+    {% endif %}
+</body>
+</html>
