@@ -8,23 +8,39 @@ import sympy as sp
 import numpy as np
 import argparse as ap
 import pandas as pd
+import re
 
-def fortuna_algorithm(x_data, y_data, formula_str, loss_func):
-	# Parse the formula string into a sympy expression
-    x = sp.symbols('x')
-    expr = sp.sympify(formula_str)
+def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000):
+    # Automatically detect all variables of the form 'x', 'x1', 'x2', ..., 'xN'
+    # Find all variable names in the formula string
+    var_names = set(re.findall(r'\bx\d*\b', formula_str))
+    # Ensure 'x' is included if present
+    if 'x' in formula_str:
+        var_names.add('x')
+    # Create sympy symbols for all detected variables
+    variables = [sp.symbols(name) for name in sorted(var_names, key=lambda s: (len(s), s))]
+    # Parse the formula string into a sympy expression
+    expr = sp.sympify(formula_str, locals={name: var for name, var in zip(var_names, variables)})
 
-    # Extract parameter symbols (all symbols except 'x')
-    params = sorted(expr.free_symbols - {x}, key=lambda s: s.name)
+    # Extract parameter symbols (all symbols except detected x variants)
+    x_syms = set(variables)
+    params = sorted(expr.free_symbols - x_syms, key=lambda s: s.name)
     param_names = [str(p) for p in params]
 
-    # Create a lambda function for curve_fit
-    func = sp.lambdify((x, *params), expr, modules=['numpy'])
+    # Create a lambda function for curve_fit, accepting all x variants and params
+    func = sp.lambdify((*x_syms, *params), expr, modules=['numpy'])
 
-    # Parse the loss function formula
-    y_true_sym, y_pred_sym = sp.symbols('y_true y_pred')
-    loss_expr = sp.sympify(loss_formula)
-    loss_func_sympy = sp.lambdify((y_true_sym, y_pred_sym), loss_expr, modules=['numpy'])
+    try: 
+        # Parse the loss function formula
+        y_true_sym, y_pred_sym = sp.symbols('y_true y_pred')
+        if 'y_true' not in loss_func or 'y_pred' not in loss_func:
+            print("Please use y_true and y_pred in the loss function.")
+            return
+        loss_expr = sp.sympify(loss_func)
+        loss_func_sympy = sp.lambdify((y_true_sym, y_pred_sym), loss_expr, modules=['numpy'])
+    except TypeError as e:
+        print("Please use y_true and y_pred in the loss function.", e)
+        return
 
     def loss_func_eval(y_true_np, y_pred_np):
         losses = loss_func_sympy(y_true_np, y_pred_np) 
@@ -35,14 +51,26 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func):
     x_test, y_test = test_data
 
     def fit_func(x, *param_values):
-        return func(x, *param_values)
+        # Prepare the variable values in the correct order for the lambdified function
+        if isinstance(x, np.ndarray) and x.ndim == 2:
+            # x is (N, num_vars), map columns to variable names
+            # variables is a list of sympy symbols in the correct order
+            var_values = []
+            for i, var in enumerate(variables):
+                # If there are fewer columns than variables, fill with zeros
+                if i < x.shape[1]:
+                    var_values.append(x[:, i])
+                else:
+                    var_values.append(np.zeros(x.shape[0]))
+            return func(*var_values, *param_values)
+        else:
+            # fallback for 1D or scalar x
+            return func(x, *param_values)
 
     best_params = None
     best_loss = float('inf')
-    np.random.seed(0)
     accuracy = 0.1
     improvement = float('inf')
-    max_iter = 10000
     param_range = (-10, 10)
     iter_count = 0
 
