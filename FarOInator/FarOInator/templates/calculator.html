@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Distanci-nator 5000</title>
+    <title>Far - O - Nator</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 2em; }
         select, button { padding: 0.5em; margin: 0.5em; }
@@ -9,21 +9,98 @@
     </style>
 </head>
 <body>
-    <h1>🔮 Distanci-nator 5000</h1>
-    <p>Select the hole size you used:</p>
+    <header style="margin-block-end: 0px;">
+        <h1 style="margin-block-end: 0px;">Far - O - Nator™</h1>
+        <h2 style="font-size: small; margin-block-start: 0px;">By evil incorporated©</h2>
+    </header>
+    <br>
+    <p>Select the hole you used and by how much the object fitted in the hole:</p>
 
     <form method="post">
         {% csrf_token %}
         <select name="hole">
             {% for h in holes %}
-                <option value="{{h}}" {% if h == hole %}selected{% endif %}>{{h}} mm</option>
+                <option value="{{h}}" {% if h == hole %}selected{% endif %}>{{h}}</option>
             {% endfor %}
         </select>
+        <select name="coverage_modifier">
+            {% for cm in coverage_modifiers %}
+                <option value="{{cm}}" {% if cm == hole_coverage_modifier %}selected{% endif %}>{{cm}}</option>
+            {% endfor %}
+        </select>
+        <br>
         <button type="submit">Calculate</button>
+
+        <button type="button" onclick="toggleAdvanced()">Advanced Options</button>
+
+        <div id="advancedOptions" style="display:none; margin-top:1em;">
+            <label for="object_size">Object size (m):</label>
+            <input type="number" step="any" name="object_size" id="object_size" value="{{ object_size|default_if_none:'' }}"><br>
+            <label for="hole_eye_distance">Hole-to-eye distance (cm):</label>
+            <input type="number" step="any" name="hole_eye_distance" id="hole_eye_distance" value="{{ hole_eye_distance|default_if_none:'' }}"><br>
+            <label for="intergalactic">Intergalactic Measurement:</label>
+            <input type="checkbox" name="intergalactic" id="intergalactic" {% if intergalactic %}checked{% endif %}>
+        </div>
     </form>
 
-    {% if distance %}
-        <div class="result">Estimated distance: {{distance}} m</div>
+    <script>
+    function toggleAdvanced() {
+        var adv = document.getElementById('advancedOptions');
+        if (adv.style.display === 'none') {
+            adv.style.display = 'block';
+        } else {
+            adv.style.display = 'none';
+            // Reset fields when closing
+            document.getElementById('object_size').value = '';
+            document.getElementById('hole_eye_distance').value = '';
+        }
+    }
+    // Keep advanced options open if values were submitted
+    window.onload = function() {
+        var objSize = document.getElementById('object_size').value;
+        var eyeDist = document.getElementById('hole_eye_distance').value;
+        var intergalactic = "{{ intergalactic|yesno:'true,false' }}";
+        if (objSize || eyeDist || intergalactic === "true") {
+            document.getElementById('advancedOptions').style.display = 'block';
+        }
+    }
+    </script>
+
+    {% if intergalactic %}
+        <div class="result">Distance till object: {{distance}} m*</div>
+        <div class="note" style="font-size: xx-small;">* For complaints regarding intergalactic measurements, please contact Deep Thought.</div>
+    {% else %}
+        {% if distance %}
+            <div class="result">Distance till object: {{distance}} m*</div>
+            <div class="note" style="font-size: xx-small;">* This is an estimate based on the provided inputs and can differ based on the actual scenario.</div>
+        {% endif %}
     {% endif %}
+
+    <footer style="margin-top:2em; font-size:small; color:#888; text-align: center;">
+        <hr>
+        <p>Far-O-Nator &copy; 2025 | <a href="/" style="color: #888;">Calculator</a> |  <a href="/manual" style="color: #888;">Manual</a> | <a href="/review" style="color:#888;">Read our reviews</a></p>
+        <br>
+        <p>
+        The <strong>Far-O-Nator™</strong> is a revolutionary cardboard-based device engineered to 
+        measure distances with <em>unparalleled (but<br> not guaranteed)</em> accuracy. Featuring 
+        <strong>patent-pending components across 17 galaxies</strong>, this advanced optical tool<br> 
+        ensures you always know exactly how far away your enemies, lairs, or suspicious pizza 
+        deliveries are. 
+        </p>
+
+        <p>
+        Whether you're a <strong>villain plotting your next scheme</strong>, a 
+        <strong>scientist conducting "totally safe" experiments</strong>, or just <br>
+        <strong>cruising through the infinite cosmos</strong>, the Far-O-Nator™ is your ultimate 
+        companion for all distance-measuring needs.
+        </p>
+
+        <p>
+        <em>Approved by 4 out of 5 Evil Scientists™ (the 5th mysteriously disappeared).</em><br><br>
+        Batteries not included.<br>
+        Accuracy range: 10m–500m (give or take a dimension).<br>
+        Warning: May cause uncontrollable evil laughter.
+        </p>
+    </footer>
 </body>
 </html>
