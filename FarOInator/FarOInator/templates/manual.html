@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,13 +17,27 @@
     </header>
     <h2>How to Use</h2>
     <ol>
+        <strong>Usage Instructions:</strong>
+        <li>Put the headpiece (labeled "Headpiece") on your head.</li>
+        <li>Put your left and right hands on the corresponding spots on the device.</li>
+        <li>Hold the device in front of you so that the white strings are under light tension.</li>
+        <li>Look through the biggest hole (A) and find the object you want to measure the distance to.</li>
+        <ul>
+            <li><strong>Disclaimer:</strong> The Far-O-Nator™ is calibrated for objects of 2m height others can be used with caution. See here a list of common objects and there size</li>
+        </ul>
+        <li>When found, find the smallest hole fitting the object. Note this down together with if the object fitted fully, three-quarters, half, or a quarter.</li>
+        <br>
+        <p>Example of how to hold the <strong>Far-O-Nator™</strong></p>
+        <img src="{% static 'holdingTheFarONator.png' %}" alt="Holding the Far-O-Nator" style="max-width:100%; height:auto;">
+        <br>
+        <strong>Calculate measurement with software:</strong>
         <li>Select the hole you used for measurement.</li>
         <li>Choose how much the object covered the hole (Full, Three-Quarter, Half, Quarter).</li>
         <li>Click <strong>Calculate</strong> to get the estimated distance.</li>
         <li>For advanced options, click <strong>Advanced Options</strong> to:
             <ul>
-                <li>Set the object size (in meters).</li>
-                <li>Set the distance from the hole to your eye (in centimeters).</li>
+                <li>When another object size is used than 2m, set the object size (in meters).</li>
+                <li>When the <strong>hole-to-eye</strong> distance is different from the default 40cm, set the distance from the hole to your eye (in centimeters).</li>
                 <li>Enable <strong>Intergalactic Measurement</strong> to get the most accurate results.</li>
             </ul>
         </li>
