@@ -71,3 +71,6 @@ def review_view(request):
 
 def manual_view(request):
     return render(request, "manual.html")
+
+def sizeguide_view(request):
+    return render(request, "sizeguide.html")
