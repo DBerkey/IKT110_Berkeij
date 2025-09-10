@@ -7,6 +7,7 @@
         select, button { padding: 0.5em; margin: 0.5em; }
         .result { margin-top: 1em; font-size: 1.5em; font-weight: bold; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
     <header style="margin-block-end: 0px;">
@@ -73,8 +74,66 @@
         {% if distance %}
             <div class="result">Distance till object: {{distance}} m*</div>
             <div class="note" style="font-size: xx-small;">* This is an estimate based on the provided inputs and can differ based on the actual scenario.</div>
+
+            {% if accuracy_data %}
+                <h3 style="margin-top:1em;">Accuracy ranges</h3>
+                <ul style="list-style:none; padding:0;">
+                    <li style="color:green; font-weight:bold;">
+                        Optimistic: ±{{ accuracy_data.optimistic.abs }} m ({{ accuracy_data.optimistic.pct }}%)
+                    </li>
+                    <li style="background:#222; color:white; display:inline-block; padding:4px 8px; margin:4px 0;">
+                        Nominal: ±{{ accuracy_data.nominal.abs }} m ({{ accuracy_data.nominal.pct }}%)
+                    </li>
+                    <li style="color:red; font-weight:bold;">
+                        Pessimistic: ±{{ accuracy_data.pessimistic.abs }} m ({{ accuracy_data.pessimistic.pct }}%)
+                    </li>
+                </ul>
+
+                <h3>Math used</h3>
+                <div style="text-align:left; display:inline-block; padding:1em; background:#ffffff; border-radius:8px; font-size:1em;">
+                    \[
+                    \text{Distance} = \frac{\text{Object size} \times \text{Eye-to-board}}{\text{Effective hole size}}
+                    \]
+
+                    \[
+                    d_{\text{eff}} = \text{Hole} \times \text{Coverage modifier}
+                    \]
+
+                    \[
+                    d_{\text{eff}} = {{ accuracy_data.components.d_eff }} \,\text{cm}
+                    \]
+
+                    \[
+                    \text{Error contributions:}
+                    \]
+
+                    \[
+                    \begin{aligned}
+                    \text{Observer error} &= {{ accuracy_data.components.human }} \,\text{cm} \\
+                    \text{Coverage error} &= {{ accuracy_data.components.coverage }} \,\text{cm} \\
+                    \text{Hole tolerance} &= {{ accuracy_data.components.hole_tol }} \,\text{cm}
+                    \end{aligned}
+                    \]
+
+                    \[
+                    \begin{aligned}
+                    \text{Nominal uncertainty (\%)} &= 
+                    \frac{\sqrt{ 
+                    \left({{ accuracy_data.components.human }}\right)^2 + 
+                    \left({{ accuracy_data.components.coverage }}\right)^2 + 
+                    \left({{ accuracy_data.components.hole_tol }}\right)^2
+                    }}{ {{ accuracy_data.components.d_eff }} } \times 100 \\[2mm]
+                    \text{Optimistic uncertainty (\%)} &= 
+                    \frac{ {{ accuracy_data.components.hole_tol }} }{ {{ accuracy_data.components.d_eff }} } \times 100 \\[1mm]
+                    \text{Pessimistic uncertainty (\%)} &= 
+                    \frac{ {{ accuracy_data.components.observer }} + {{ accuracy_data.components.coverage }} + {{ accuracy_data.components.hole_tol }} }{ {{ accuracy_data.components.d_eff }} } \times 100
+                    \end{aligned}
+                    \]
+                </div>
+            {% endif %}
         {% endif %}
     {% endif %}
+
 
     <footer style="margin-top:2em; font-size:small; color:#888; text-align: center;">
         <hr>
