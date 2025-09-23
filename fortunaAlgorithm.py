@@ -10,6 +10,27 @@ import argparse as ap
 import pandas as pd
 import re
 
+def loss_func_eval(y_true_np, y_pred_np, loss_func_sympy):
+    losses = loss_func_sympy(y_true_np, y_pred_np) 
+    return np.mean(losses)
+
+def fit_func(x, *param_values, func, variables):
+    # Prepare the variable values in the correct order for the lambdified function
+    if isinstance(x, np.ndarray) and x.ndim == 2:
+        # x is (N, num_vars), map columns to variable names
+        # variables is a list of sympy symbols in the correct order
+        var_values = []
+        for i, var in enumerate(variables):
+            # If there are fewer columns than variables, fill with zeros
+            if i < x.shape[1]:
+                var_values.append(x[:, i])
+            else:
+                var_values.append(np.zeros(x.shape[0]))
+        return func(*var_values, *param_values)
+    else:
+        # fallback for 1D or scalar x
+        return func(x, *param_values)
+
 def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000, 
                      init_samples=1000, pop_size=50, offspring_per_gen=500,
                      sigma_init=0.8, sigma_min=0.02, param_range=(-10, 10)):
@@ -20,7 +41,7 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
     - x_data, y_data: input data arrays
     - formula_str: mathematical formula as string
     - loss_func: loss function as string
-    - max_iter: maximum budget for evaluations
+    - max_iter: maximum amount of repeated function evaluations
     - init_samples: initial random population size
     - pop_size: size of parent population
     - offspring_per_gen: number of offspring per generation
@@ -58,11 +79,7 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
         loss_func_sympy = sp.lambdify((y_true_sym, y_pred_sym), loss_expr, modules=['numpy'])
     except TypeError as e:
         print("Please use y_true and y_pred in the loss function.", e)
-        return
-
-    def loss_func_eval(y_true_np, y_pred_np):
-        losses = loss_func_sympy(y_true_np, y_pred_np) 
-        return np.mean(losses) 
+        return 
 
     def loss_for_param_batch(param_array, x_data, y_data):
         """
@@ -75,8 +92,8 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
         
         for i in range(n_candidates):
             try:
-                y_pred = fit_func(x_data, *param_array[i])
-                losses[i] = loss_func_eval(y_data, y_pred)
+                y_pred = fit_func(x_data, *param_array[i], func, variables)
+                losses[i] = loss_func_eval(y_data, y_pred, loss_func_sympy)
             except:
                 losses[i] = float('inf')  # Handle numerical errors
         
@@ -86,23 +103,6 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
     x_train, y_train = train_data
     x_test, y_test = test_data
 
-    def fit_func(x, *param_values):
-        # Prepare the variable values in the correct order for the lambdified function
-        if isinstance(x, np.ndarray) and x.ndim == 2:
-            # x is (N, num_vars), map columns to variable names
-            # variables is a list of sympy symbols in the correct order
-            var_values = []
-            for i, var in enumerate(variables):
-                # If there are fewer columns than variables, fill with zeros
-                if i < x.shape[1]:
-                    var_values.append(x[:, i])
-                else:
-                    var_values.append(np.zeros(x.shape[0]))
-            return func(*var_values, *param_values)
-        else:
-            # fallback for 1D or scalar x
-            return func(x, *param_values)
-
     # Evolutionary strategy implementation
     if init_samples >= max_iter:
         # Fallback to simple random search if no room for evolution
@@ -111,8 +111,8 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
         
         for _ in range(max_iter):
             params_try = np.random.uniform(param_range[0], param_range[1], n_params)
-            y_pred = fit_func(x_train, *params_try)
-            loss = loss_func_eval(y_train, y_pred)
+            y_pred = fit_func(x_train, *params_try, func, variables)
+            loss = loss_func_eval(y_train, y_pred, loss_func_sympy)
             if loss < best_loss:
                 best_loss = loss
                 best_params = params_try
@@ -175,8 +175,8 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
     print(f"Train loss: {best_loss:.4f}")
 
     # Evaluate on test data
-    y_test_pred = fit_func(x_test, *best_params)
-    test_loss = loss_func_eval(y_test, y_test_pred)
+    y_test_pred = fit_func(x_test, *best_params, func, variables)
+    test_loss = loss_func_eval(y_test, y_test_pred, loss_func_sympy)
     print(f"Test loss: {test_loss:.4f}")
     return best_params
 
