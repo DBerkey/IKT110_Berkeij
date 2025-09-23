@@ -10,7 +10,24 @@ import argparse as ap
 import pandas as pd
 import re
 
-def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000):
+def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000, 
+                     init_samples=1000, pop_size=50, offspring_per_gen=500,
+                     sigma_init=0.8, sigma_min=0.02, param_range=(-10, 10)):
+    """
+    Enhanced Fortuna Algorithm with evolutionary strategy for curve fitting.
+    
+    Parameters:
+    - x_data, y_data: input data arrays
+    - formula_str: mathematical formula as string
+    - loss_func: loss function as string
+    - max_iter: maximum budget for evaluations
+    - init_samples: initial random population size
+    - pop_size: size of parent population
+    - offspring_per_gen: number of offspring per generation
+    - sigma_init: initial mutation strength
+    - sigma_min: minimum mutation strength
+    - param_range: parameter search range tuple
+    """
     # Automatically detect all variables of the form 'x', 'x1', 'x2', ..., 'xN'
     # Find all variable names in the formula string
     var_names = set(re.findall(r'\bx\d*\b', formula_str))
@@ -26,6 +43,7 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000):
     x_syms = set(variables)
     params = sorted(expr.free_symbols - x_syms, key=lambda s: s.name)
     param_names = [str(p) for p in params]
+    n_params = len(params)
 
     # Create a lambda function for curve_fit, accepting all x variants and params
     func = sp.lambdify((*x_syms, *params), expr, modules=['numpy'])
@@ -45,6 +63,24 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000):
     def loss_func_eval(y_true_np, y_pred_np):
         losses = loss_func_sympy(y_true_np, y_pred_np) 
         return np.mean(losses) 
+
+    def loss_for_param_batch(param_array, x_data, y_data):
+        """
+        Vectorized loss computation for multiple parameter sets.
+        param_array: shape (n_candidates, n_params)
+        returns: losses shape (n_candidates,)
+        """
+        n_candidates, _ = param_array.shape
+        losses = np.zeros(n_candidates)
+        
+        for i in range(n_candidates):
+            try:
+                y_pred = fit_func(x_data, *param_array[i])
+                losses[i] = loss_func_eval(y_data, y_pred)
+            except:
+                losses[i] = float('inf')  # Handle numerical errors
+        
+        return losses
 
     train_data, test_data = splitData(x_data, y_data)
     x_train, y_train = train_data
@@ -67,22 +103,71 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000):
             # fallback for 1D or scalar x
             return func(x, *param_values)
 
-    best_params = None
-    best_loss = float('inf')
-    accuracy = 0.1
-    improvement = float('inf')
-    param_range = (-10, 10)
-    iter_count = 0
-
-    while improvement > accuracy and iter_count < max_iter:
-        params_try = np.round(np.random.uniform(param_range[0], param_range[1], len(params)), 1)
-        y_pred = fit_func(x_train, *params_try)
-        loss = loss_func_eval(y_train, y_pred)
-        if loss < best_loss:
-            improvement = best_loss - loss
-            best_loss = loss
-            best_params = params_try
-        iter_count += 1
+    # Evolutionary strategy implementation
+    if init_samples >= max_iter:
+        # Fallback to simple random search if no room for evolution
+        best_params = None
+        best_loss = float('inf')
+        
+        for _ in range(max_iter):
+            params_try = np.random.uniform(param_range[0], param_range[1], n_params)
+            y_pred = fit_func(x_train, *params_try)
+            loss = loss_func_eval(y_train, y_pred)
+            if loss < best_loss:
+                best_loss = loss
+                best_params = params_try
+    else:
+        # 1) Initial random population
+        param_array = np.random.uniform(param_range[0], param_range[1], size=(init_samples, n_params))
+        losses = loss_for_param_batch(param_array, x_train, y_train)
+        
+        # Select top performers as parents
+        idxs = np.argsort(losses)[:pop_size]
+        parents = param_array[idxs].copy()
+        parent_losses = losses[idxs].copy()
+        
+        used = init_samples
+        remaining = max_iter - used
+        n_gens = max(1, remaining // offspring_per_gen)
+        
+        sigma = sigma_init
+        best_idx = np.argmin(parent_losses)
+        best_params = parents[best_idx].copy()
+        best_loss = parent_losses[best_idx]
+        
+        print(f"Starting evolution with {n_gens} generations, pop_size={pop_size}")
+        
+        # 2) Evolution loop
+        for g in range(int(n_gens)):
+            # Linearly anneal sigma
+            progress = g / max(1, n_gens - 1)
+            sigma = max(sigma_min, sigma_init * (1 - progress) + sigma_min * progress)
+            
+            # Create offspring by mutating parents
+            parent_choices = np.random.choice(pop_size, size=offspring_per_gen)
+            offspring = parents[parent_choices] + np.random.normal(scale=sigma, size=(offspring_per_gen, n_params))
+            
+            # Clip to parameter range
+            np.clip(offspring, param_range[0], param_range[1], out=offspring)
+            
+            # Evaluate offspring
+            offspring_losses = loss_for_param_batch(offspring, x_train, y_train)
+            
+            # Merge parents and offspring, select best
+            merged_params = np.vstack([parents, offspring])
+            merged_losses = np.concatenate([parent_losses, offspring_losses])
+            idxs = np.argsort(merged_losses)[:pop_size]
+            
+            parents = merged_params[idxs].copy()
+            parent_losses = merged_losses[idxs].copy()
+            
+            # Update best solution
+            if parent_losses[0] < best_loss:
+                best_loss = float(parent_losses[0])
+                best_params = parents[0].copy()
+            
+            if g % 10 == 0 or g == n_gens - 1:
+                print(f"Generation {g}: best loss = {best_loss:.6f}, sigma = {sigma:.4f}")
 
     print("Optimal parameters found (train set):")
     for name, value in zip(param_names, best_params):
@@ -104,14 +189,21 @@ def splitData(x_data, y_data, split_ratio=0.8):
 
 # Example usage:
 if __name__ == "__main__":
-    ap = ap.ArgumentParser(description="Fortuna Algorithm for curve fitting")
+    ap = ap.ArgumentParser(description="Enhanced Fortuna Algorithm with evolutionary strategy for curve fitting")
     ap.add_argument('--formula', type=str, required=True, help='Formula in terms of x (e.g., a*x**2 + b*x + c)')
     ap.add_argument('--loss', type=str, required=True, help='Loss function formula (e.g., mean((y_true-y_pred)**2)) ' \
     'You can use mean, sum, abs, y_true and y_pred. Example for MAE: mean(abs(y_true-y_pred))')
     ap.add_argument('--data', type=str, required=True, help='Path to the CSV file containing the data with columns x and y')
+    ap.add_argument('--max-iter', type=int, default=10000, help='Maximum number of function evaluations (default: 10000)')
+    ap.add_argument('--init-samples', type=int, default=1000, help='Initial random population size (default: 1000)')
+    ap.add_argument('--pop-size', type=int, default=50, help='Population size for evolution (default: 50)')
+    ap.add_argument('--offspring-per-gen', type=int, default=500, help='Number of offspring per generation (default: 500)')
+    ap.add_argument('--sigma-init', type=float, default=0.8, help='Initial mutation strength (default: 0.8)')
+    ap.add_argument('--sigma-min', type=float, default=0.02, help='Minimum mutation strength (default: 0.02)')
+    ap.add_argument('--param-range', nargs=2, type=float, default=[-10, 10], help='Parameter search range (default: -10 10)')
     args = ap.parse_args()
 
-    # Example data (quadratic)
+    # Load data
     data = args.data
     df = pd.read_csv(data)
     x_data = df['x'].values
@@ -119,5 +211,14 @@ if __name__ == "__main__":
 
     formula = args.formula
     loss_formula = args.loss
-    fortuna_algorithm(x_data, y_data, formula, loss_formula)
+    
+    # Run enhanced Fortuna algorithm
+    fortuna_algorithm(x_data, y_data, formula, loss_formula, 
+                     max_iter=args.max_iter,
+                     init_samples=args.init_samples,
+                     pop_size=args.pop_size,
+                     offspring_per_gen=args.offspring_per_gen,
+                     sigma_init=args.sigma_init,
+                     sigma_min=args.sigma_min,
+                     param_range=tuple(args.param_range))
 
