@@ -31,9 +31,9 @@ def fit_func(x, *param_values, func, variables):
         # fallback for 1D or scalar x
         return func(x, *param_values)
 
-def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000, 
-                     init_samples=1000, pop_size=50, offspring_per_gen=500,
-                     sigma_init=0.8, sigma_min=0.02, param_range=(-10, 10)):
+def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=100000, 
+                     init_samples=1000, pop_size=100, offspring_per_gen=500,
+                     evo_str_init=10, evo_str_min=0.02, param_range=(-10, 10)):
     """
     Enhanced Fortuna Algorithm with evolutionary strategy for curve fitting.
     
@@ -45,8 +45,8 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
     - init_samples: initial random population size
     - pop_size: size of parent population
     - offspring_per_gen: number of offspring per generation
-    - sigma_init: initial mutation strength
-    - sigma_min: minimum mutation strength
+    - evo_str_init: initial mutation strength
+    - evo_str_min: minimum mutation strength
     - param_range: parameter search range tuple
     """
     # Automatically detect all variables of the form 'x', 'x1', 'x2', ..., 'xN'
@@ -92,10 +92,10 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
         
         for i in range(n_candidates):
             try:
-                y_pred = fit_func(x_data, *param_array[i], func, variables)
+                y_pred = fit_func(x_data, *param_array[i], func=func, variables=variables)
                 losses[i] = loss_func_eval(y_data, y_pred, loss_func_sympy)
             except:
-                losses[i] = float('inf')  # Handle numerical errors
+                losses[i] = float('inf')
         
         return losses
 
@@ -103,71 +103,38 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
     x_train, y_train = train_data
     x_test, y_test = test_data
 
-    # Evolutionary strategy implementation
-    if init_samples >= max_iter:
-        # Fallback to simple random search if no room for evolution
-        best_params = None
-        best_loss = float('inf')
+    # Initialize population
+    param_low, param_high = param_range
+    population = np.random.uniform(param_low, param_high, size=(init_samples, n_params))
+    evo_strength = evo_str_init
+    best_params = None
+    best_loss = 10e10
+    eval_count = 0
+    iteration = 0
+    while eval_count < max_iter:
+        iteration += 1
+        # Generate offspring
+        offspring = population[np.random.randint(0, pop_size, size=(offspring_per_gen,))] + \
+                    np.random.normal(0, evo_strength, size=(offspring_per_gen, n_params))
+        # Clip offspring to parameter range
+        offspring = np.clip(offspring, param_low, param_high)
+
+        # Evaluate losses for offspring
+        losses = loss_for_param_batch(offspring, x_train, y_train)
+        # Update population based on losses
+        population = offspring[np.argsort(losses)[:pop_size]]
         
-        for _ in range(max_iter):
-            params_try = np.random.uniform(param_range[0], param_range[1], n_params)
-            y_pred = fit_func(x_train, *params_try, func, variables)
-            loss = loss_func_eval(y_train, y_pred, loss_func_sympy)
-            if loss < best_loss:
-                best_loss = loss
-                best_params = params_try
-    else:
-        # 1) Initial random population
-        param_array = np.random.uniform(param_range[0], param_range[1], size=(init_samples, n_params))
-        losses = loss_for_param_batch(param_array, x_train, y_train)
+        # Update best parameters if we found a better solution
+        current_best_loss = losses.min()
+        if current_best_loss < best_loss:
+            best_loss = current_best_loss
+            best_params = offspring[np.argmin(losses)]
         
-        # Select top performers as parents
-        idxs = np.argsort(losses)[:pop_size]
-        parents = param_array[idxs].copy()
-        parent_losses = losses[idxs].copy()
-        
-        used = init_samples
-        remaining = max_iter - used
-        n_gens = max(1, remaining // offspring_per_gen)
-        
-        sigma = sigma_init
-        best_idx = np.argmin(parent_losses)
-        best_params = parents[best_idx].copy()
-        best_loss = parent_losses[best_idx]
-        
-        print(f"Starting evolution with {n_gens} generations, pop_size={pop_size}")
-        
-        # 2) Evolution loop
-        for g in range(int(n_gens)):
-            # Linearly anneal sigma
-            progress = g / max(1, n_gens - 1)
-            sigma = max(sigma_min, sigma_init * (1 - progress) + sigma_min * progress)
-            
-            # Create offspring by mutating parents
-            parent_choices = np.random.choice(pop_size, size=offspring_per_gen)
-            offspring = parents[parent_choices] + np.random.normal(scale=sigma, size=(offspring_per_gen, n_params))
-            
-            # Clip to parameter range
-            np.clip(offspring, param_range[0], param_range[1], out=offspring)
-            
-            # Evaluate offspring
-            offspring_losses = loss_for_param_batch(offspring, x_train, y_train)
-            
-            # Merge parents and offspring, select best
-            merged_params = np.vstack([parents, offspring])
-            merged_losses = np.concatenate([parent_losses, offspring_losses])
-            idxs = np.argsort(merged_losses)[:pop_size]
-            
-            parents = merged_params[idxs].copy()
-            parent_losses = merged_losses[idxs].copy()
-            
-            # Update best solution
-            if parent_losses[0] < best_loss:
-                best_loss = float(parent_losses[0])
-                best_params = parents[0].copy()
-            
-            if g % 10 == 0 or g == n_gens - 1:
-                print(f"Generation {g}: best loss = {best_loss:.6f}, sigma = {sigma:.4f}")
+        eval_count += offspring.shape[0]
+        # Decay evolutionary strategy
+        evo_strength = max(evo_strength * 0.99, evo_str_min)
+        if iteration % 10 == 0 or eval_count >= max_iter:
+            print(f"Iteration {iteration}, Evaluations: {eval_count}, Best Loss: {best_loss:.4f}, Evo Strength: {evo_strength:.4f}")
 
     print("Optimal parameters found (train set):")
     for name, value in zip(param_names, best_params):
@@ -175,7 +142,7 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=10000,
     print(f"Train loss: {best_loss:.4f}")
 
     # Evaluate on test data
-    y_test_pred = fit_func(x_test, *best_params, func, variables)
+    y_test_pred = fit_func(x_test, *best_params, func=func, variables=variables)
     test_loss = loss_func_eval(y_test, y_test_pred, loss_func_sympy)
     print(f"Test loss: {test_loss:.4f}")
     return best_params

@@ -49,21 +49,6 @@ def preprocess(input_data):
     return input_data
 
 
-def simple_polyfit(X, y, degree=2):
-    """Simple polynomial fitting using numpy"""
-    X_flat = X.flatten()
-    if degree == 1:
-        # Linear: y = a + bx
-        A = np.column_stack([np.ones(len(X_flat)), X_flat])
-    else:
-        # Quadratic: y = a + bx + cx^2
-        A = np.column_stack([np.ones(len(X_flat)), X_flat, X_flat**2])
-
-    # Solve normal equations: A^T A x = A^T y
-    coeffs = np.linalg.lstsq(A, y, rcond=None)[0]
-    return coeffs
-
-
 def train_route_model(route_data, route_name):
     """Train a single route model with pattern-specific approach"""
 
@@ -103,9 +88,15 @@ def train_route_model(route_data, route_name):
     # Use simple polynomial fitting instead of Fortuna for stability
     try:
         if use_quadratic:
-            optimal_params = simple_polyfit(X, y, degree=2)
+            optimal_params = fortuna_algorithm(X, y, formula_str=formula, loss_func="(y_true - y_pred)**2", 
+                                              max_iter=50000, init_samples=2000, pop_size=200, 
+                                              offspring_per_gen=500, evo_str_init=1.0, evo_str_min=0.001,
+                                              param_range=(-200, 200))
         else:
-            optimal_params = simple_polyfit(X, y, degree=1)
+            optimal_params = fortuna_algorithm(X, y, formula_str=formula, loss_func="(y_true - y_pred)**2", 
+                                              max_iter=30000, init_samples=1500, pop_size=150, 
+                                              offspring_per_gen=300, evo_str_init=0.5, evo_str_min=0.001,
+                                              param_range=(-100, 100))
 
         # Calculate RMSE for reporting
         y_pred = evaluate_model(X, optimal_params, formula)
@@ -263,7 +254,7 @@ if __name__ == "__main__":
             hour, minute, models)
 
         if best_route:
-            print(f"🏆 Best: {best_route} ({best_time:.1f} min)")
+            print(f"Best: {best_route} ({best_time:.1f} min)")
             for route, pred_time in sorted(all_predictions, key=lambda x: x[1]):
                 print(f"  {route}: {pred_time:.1f} min")
         else:
