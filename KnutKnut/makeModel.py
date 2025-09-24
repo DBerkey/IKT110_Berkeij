@@ -478,7 +478,7 @@ def plot_model_fits(processed_data, models):
 
 if __name__ == "__main__":
     # Load and preprocess data
-    with open('traffic.jsonl', 'r') as f:
+    with open('KnutKnut/traffic.jsonl', 'r') as f:
         data = [json.loads(line) for line in f]
 
     processed_data = preprocess(data)
