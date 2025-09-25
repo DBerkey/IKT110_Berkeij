@@ -195,8 +195,6 @@ def fortuna_algorithm(x_data, y_data, formula_str, loss_func, max_iter=100000,
 
         if iteration % 10 == 0 or eval_count >= max_iter:
             stag_count = getattr(fortuna_algorithm, 'stagnation_count', 0)
-            print(
-                f"Iteration {iteration}, Evaluations: {eval_count}, Best Loss: {best_loss:.4f}, Evo Strength: {evo_strength:.4f}, Stagnant: {stag_count}")
 
     print("Optimal parameters found (train set):")
     for name, value in zip(param_names, best_params):
@@ -267,6 +265,6 @@ if __name__ == "__main__":
                       init_samples=args.init_samples,
                       pop_size=args.pop_size,
                       offspring_per_gen=args.offspring_per_gen,
-                      sigma_init=args.sigma_init,
-                      sigma_min=args.sigma_min,
+                      evo_str_init=args.sigma_init,
+                      evo_str_min=args.sigma_min,
                       param_range=tuple(args.param_range))

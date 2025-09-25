@@ -5,18 +5,21 @@ Date: 24-09-2025
 import pickle
 import numpy as np
 from flask import Flask, request
-from makeModel import get_best_route
+from make_machine_learning_model import get_best_route
 
 app = Flask(__name__)
 
 # Load the updated models (dict with 4 routes as keys)
-with open("KnutKnut/knut_knut_clean_models.pkl", "rb") as f:
+with open("KnutKnut\knut_knut_models_20250925_124950.pkl", "rb") as f:
     models = pickle.load(f)
 
 
 def get_the_best_route_as_a_text_informatic(dep_hour, dep_min):
     dep_hour = int(dep_hour)
-    dep_min = int(dep_min)
+    if dep_min == '' or dep_min is None:
+        dep_min = 0
+    else:
+        dep_min = int(dep_min)
 
     best_route, best_time, predictions = get_best_route(dep_hour, dep_min, models)
 
@@ -68,6 +71,12 @@ def get_departure_time():
                 <option value="14">14</option>
                 <option value="15">15</option>
                 <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+                <option value="19">19</option>
+                <option value="20">20</option>
+                <option value="21">21</option>
+                <option value="22">22</option>
             </select>
             
             <label for="mins">Mins:</label>
