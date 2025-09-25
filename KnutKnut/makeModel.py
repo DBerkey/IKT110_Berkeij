@@ -4,11 +4,8 @@ Date: 23-09-2025
 Clean route-specific travel time prediction models
 """
 
-from queue import Queue
-import concurrent.futures
-import threading
+import re
 import matplotlib.pyplot as plt
-import pandas as pd
 import time
 import json
 import numpy as np
@@ -317,7 +314,6 @@ def predict_travel_time(dep_hour, dep_minute, route, models):
         minutes = dep_hour * 60 + dep_minute
 
         # Extract x_mean from the formula string
-        import re
         x_mean_match = re.search(r'x0 - ([\d.]+) \+ a3', formula)
         x_mean = float(x_mean_match.group(1)) if x_mean_match else 0
 
