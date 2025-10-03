@@ -172,9 +172,9 @@ if __name__ == "__main__":
     player_id = "id_of_human_player"
     port = 8000
 
-    print("🚀 Starting Enhanced Interest-Split Agent")
-    print("📊 This agent supports dynamic configuration via agent_config.json")
-    print("🎯 Use the dashboard to adjust parameters in real-time!")
+    print("Starting Enhanced Interest-Split Agent")
+    print("This agent supports dynamic configuration via agent_config.json")
+    print("Use the dashboard to adjust parameters in real-time!")
     
     game: AuctionGameClient = AuctionGameClient(host=host,
                             agent_name=agent_name,

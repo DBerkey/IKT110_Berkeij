@@ -16,7 +16,7 @@ from pathlib import Path
 class AgentDashboard:
     def __init__(self):
         self.app = dash.Dash(__name__)
-        self.data_file = "dnd_auction_agents/logs/"
+        self.data_file = "logs/"  # Fixed: actual log directory
         self.agent_data = {}
         self.current_round = 0
         self.setup_layout()
@@ -116,12 +116,13 @@ class AgentDashboard:
         while True:
             try:
                 # Look for the latest agent log file
-                log_dir = Path("dnd_auction_agents/logs")
+                log_dir = Path("logs")  # Fixed: correct log directory
                 if log_dir.exists():
-                    log_files = list(log_dir.glob("agent_local_rand_id_*_n0.jsonl"))
+                    log_files = list(log_dir.glob("agent_local_rand_id_*.jsonl"))
                     if log_files:
                         latest_log = max(log_files, key=os.path.getctime)
                         self.parse_agent_log(latest_log)
+                        print(f"📊 Monitoring log: {latest_log.name}")  # Debug info
                 
                 # Also check auction house logs
                 auction_log = Path("dnd_auction_game/auction_house_log_2.jsonln")
