@@ -1,0 +1,462 @@
+import random
+import os
+from typing import Any, Dict, List, Tuple
+from dnd_auction_game import AuctionGameClient
+import statistics
+import json
+
+# Global variables to track learning data
+learning_data = {
+    'auction_outcomes': [],  # Historical auction results
+    'competitor_profiles': {},  # Agent behavioral patterns
+    'winning_strategies': {},  # What strategies win
+    'market_trends': [],  # How bidding evolves over time
+    'performance_metrics': {'wins': 0, 'total_bids': 0, 'total_spent': 0, 'total_earned': 0}
+}
+
+
+def advanced_predictive_strategy(agent_id: str, current_round: int, states: dict[str, dict[str, Any]], 
+                                auctions: dict[str, Dict[str, Any]], prev_auctions: dict[str, Dict[str, Any]], 
+                                bank_state: dict[str, Any]) -> Dict[str, int]:
+    """
+    Advanced Strategy: Machine Learning-inspired bidding based on comprehensive data analysis
+    
+    Features:
+    1. Competitor Behavior Analysis
+    2. Auction Value Prediction  
+    3. Market Trend Analysis
+    4. Dynamic Strategy Adaptation
+    5. Risk Assessment
+    """
+    global learning_data
+    
+    agent_state = states[agent_id]
+    current_gold = agent_state["gold"]
+    
+    # Learn from previous round
+    if prev_auctions:
+        learn_from_previous_round(prev_auctions, states, agent_id)
+    
+    print(f"\n=== Round {current_round} Analysis ===")
+    print(f"Gold: {current_gold} | Performance: {learning_data['performance_metrics']}")
+    
+    bids = {}
+    
+    # Skip first round - need data to learn
+    if current_round == 0:
+        print("🤖 LEARNING MODE: Collecting initial data...")
+        return bids
+    
+    # Analyze each auction with ML-style prediction
+    auction_analyses = []
+    for auction_id, auction in auctions.items():
+        analysis = analyze_auction_ml_style(auction, auction_id, current_round, states, current_gold)
+        auction_analyses.append((auction_id, auction, analysis))
+    
+    # Sort auctions by predicted profitability
+    auction_analyses.sort(key=lambda x: x[2]['profit_score'], reverse=True)
+    
+    # Allocate budget using portfolio optimization approach
+    budget_allocation = optimize_budget_allocation(auction_analyses, current_gold)
+    
+    # Place bids based on optimized allocation
+    for auction_id, auction, analysis in auction_analyses:
+        if auction_id in budget_allocation and budget_allocation[auction_id] > 0:
+            bid_amount = budget_allocation[auction_id]
+            bids[auction_id] = bid_amount
+            
+            print(f"💡 Bidding {bid_amount} on {auction_id} (d{auction['die']}×{auction['num']}+{auction['bonus']})")
+            print(f"   📊 Analysis: Win% {analysis['win_probability']:.0%}, Profit {analysis['profit_score']:.1f}, ROI {analysis['expected_roi']:.2f}")
+    
+    total_bid = sum(bids.values())
+    print(f"📈 Total Strategy: {total_bid} invested across {len(bids)} auctions")
+    print(f"💰 Conservative Reserve: {current_gold - total_bid}")
+    
+    return bids
+
+
+def learn_from_previous_round(prev_auctions: dict, states: dict, my_agent_id: str):
+    """Extract maximum learning from previous auction results"""
+    global learning_data
+    
+    for auction_id, auction_data in prev_auctions.items():
+        if 'bids' not in auction_data or not auction_data['bids']:
+            continue
+            
+        # Record auction outcome
+        outcome = {
+            'auction_id': auction_id,
+            'auction_spec': f"d{auction_data['die']}×{auction_data['num']}+{auction_data['bonus']}",
+            'actual_reward': auction_data.get('reward', 0),
+            'expected_value': calculate_theoretical_expected_value(auction_data),
+            'all_bids': [(bid['a_id'], bid['gold']) for bid in auction_data['bids']],
+            'winning_bid': max(bid['gold'] for bid in auction_data['bids']),
+            'total_participants': len(auction_data['bids']),
+            'competition_level': calculate_competition_level(auction_data['bids'])
+        }
+        learning_data['auction_outcomes'].append(outcome)
+        
+        # Update competitor profiles
+        for bid_info in auction_data['bids']:
+            agent_id = bid_info['a_id']
+            bid_amount = bid_info['gold']
+            
+            if agent_id not in learning_data['competitor_profiles']:
+                learning_data['competitor_profiles'][agent_id] = {
+                    'bid_history': [],
+                    'win_rate': 0.0,
+                    'avg_bid': 0.0,
+                    'risk_profile': 'unknown',
+                    'strategy_type': 'unknown'
+                }
+            
+            profile = learning_data['competitor_profiles'][agent_id]
+            profile['bid_history'].append(bid_amount)
+            
+            # Analyze strategy type
+            if len(profile['bid_history']) >= 3:
+                profile['strategy_type'] = classify_competitor_strategy(profile['bid_history'])
+                profile['risk_profile'] = assess_risk_profile(profile['bid_history'])
+        
+        # Track my performance
+        my_bids = [bid for bid in auction_data['bids'] if bid['a_id'] == my_agent_id]
+        if my_bids:
+            learning_data['performance_metrics']['total_bids'] += 1
+            learning_data['performance_metrics']['total_spent'] += my_bids[0]['gold']
+            
+            if my_bids[0]['gold'] == outcome['winning_bid']:
+                learning_data['performance_metrics']['wins'] += 1
+                learning_data['performance_metrics']['total_earned'] += outcome['actual_reward']
+
+
+def analyze_auction_ml_style(auction: dict, auction_id: str, current_round: int, 
+                           states: dict, available_gold: int) -> dict:
+    """Comprehensive ML-style analysis of an auction"""
+    
+    # Base metrics
+    expected_value = calculate_theoretical_expected_value(auction)
+    
+    # Historical performance analysis
+    historical_data = get_historical_data_for_similar_auctions(auction)
+    
+    # Competitor behavior prediction
+    competitor_analysis = analyze_competitor_intentions(states, auction, current_round)
+    
+    # Market conditions
+    market_conditions = assess_market_conditions(current_round)
+    
+    # Calculate win probability using multiple factors
+    win_probability = calculate_win_probability(
+        auction, historical_data, competitor_analysis, available_gold
+    )
+    
+    # Calculate expected ROI
+    expected_roi = calculate_expected_roi(
+        auction, expected_value, historical_data, win_probability
+    )
+    
+    # Calculate profit score (combines multiple factors)
+    profit_score = calculate_profit_score(
+        expected_value, win_probability, expected_roi, market_conditions
+    )
+    
+    return {
+        'expected_value': expected_value,
+        'win_probability': win_probability,
+        'expected_roi': expected_roi,
+        'profit_score': profit_score,
+        'recommended_bid': calculate_recommended_bid(auction, win_probability, expected_value),
+        'confidence_level': calculate_confidence_level(historical_data, competitor_analysis)
+    }
+
+
+def calculate_theoretical_expected_value(auction: dict) -> float:
+    """Calculate theoretical expected value of auction"""
+    die_size = auction['die']
+    num_dice = auction['num']
+    bonus = auction['bonus']
+    
+    expected_per_die = (die_size + 1) / 2.0
+    return max(0, (expected_per_die * num_dice) + bonus)
+
+
+def get_historical_data_for_similar_auctions(auction: dict) -> dict:
+    """Get performance data for similar auctions"""
+    global learning_data
+    
+    target_spec = f"d{auction['die']}×{auction['num']}+{auction['bonus']}"
+    similar_auctions = [
+        outcome for outcome in learning_data['auction_outcomes']
+        if outcome['auction_spec'] == target_spec
+    ]
+    
+    if not similar_auctions:
+        # Find auctions with similar expected values
+        target_ev = calculate_theoretical_expected_value(auction)
+        similar_auctions = [
+            outcome for outcome in learning_data['auction_outcomes']
+            if abs(outcome['expected_value'] - target_ev) <= 2
+        ]
+    
+    if similar_auctions:
+        return {
+            'sample_size': len(similar_auctions),
+            'avg_winning_bid': statistics.mean([a['winning_bid'] for a in similar_auctions]),
+            'avg_actual_reward': statistics.mean([a['actual_reward'] for a in similar_auctions]),
+            'competition_levels': [a['competition_level'] for a in similar_auctions]
+        }
+    
+    return {'sample_size': 0, 'avg_winning_bid': 100, 'avg_actual_reward': 0, 'competition_levels': []}
+
+
+def analyze_competitor_intentions(states: dict, auction: dict, current_round: int) -> dict:
+    """Predict what competitors will do"""
+    global learning_data
+    
+    competitor_predictions = {}
+    total_predicted_competition = 0
+    
+    for agent_id, agent_state in states.items():
+        if agent_id in learning_data['competitor_profiles']:
+            profile = learning_data['competitor_profiles'][agent_id]
+            
+            # Predict their bid based on their profile
+            if profile['strategy_type'] == 'aggressive':
+                predicted_bid = min(agent_state['gold'] * 0.3, profile.get('avg_bid', 100) * 1.2)
+            elif profile['strategy_type'] == 'conservative':
+                predicted_bid = min(agent_state['gold'] * 0.1, profile.get('avg_bid', 50) * 0.8)
+            else:  # moderate or unknown
+                predicted_bid = min(agent_state['gold'] * 0.15, profile.get('avg_bid', 75))
+            
+            competitor_predictions[agent_id] = predicted_bid
+            total_predicted_competition += predicted_bid
+    
+    return {
+        'individual_predictions': competitor_predictions,
+        'total_competition': total_predicted_competition,
+        'estimated_winning_bid': total_predicted_competition * 1.1  # Need to beat by 10%
+    }
+
+
+def calculate_win_probability(auction: dict, historical_data: dict, 
+                            competitor_analysis: dict, available_gold: int) -> float:
+    """Calculate probability of winning this auction"""
+    
+    if historical_data['sample_size'] == 0:
+        return 0.5  # No data, assume 50/50
+    
+    estimated_winning_bid = competitor_analysis.get('estimated_winning_bid', 100)
+    
+    # Can we afford to win?
+    if estimated_winning_bid > available_gold:
+        return 0.1  # Very low chance if we can't afford competitive bid
+    
+    # Base probability on our ability to outbid
+    if available_gold >= estimated_winning_bid * 1.5:
+        return 0.9  # High chance if we can significantly outbid
+    elif available_gold >= estimated_winning_bid * 1.2:
+        return 0.7  # Good chance if we can outbid by 20%
+    elif available_gold >= estimated_winning_bid:
+        return 0.5  # Coin flip if we can just match
+    else:
+        return 0.2  # Low chance if we're underbidding
+
+
+def calculate_expected_roi(auction: dict, expected_value: float, 
+                         historical_data: dict, win_probability: float) -> float:
+    """Calculate expected return on investment"""
+    
+    if historical_data['sample_size'] > 0:
+        avg_actual_reward = historical_data['avg_actual_reward']
+        avg_winning_bid = historical_data['avg_winning_bid']
+        
+        if avg_winning_bid > 0:
+            historical_roi = avg_actual_reward / avg_winning_bid
+            # Weight between theoretical and historical
+            estimated_reward = (expected_value + avg_actual_reward) / 2
+            estimated_cost = avg_winning_bid
+        else:
+            estimated_reward = expected_value
+            estimated_cost = expected_value * 0.8  # Assume 80% of value
+    else:
+        estimated_reward = expected_value
+        estimated_cost = expected_value * 0.8
+    
+    if estimated_cost == 0:
+        return 0
+    
+    # Expected ROI = (probability of winning * reward - cost) / cost
+    expected_net = (win_probability * estimated_reward) - estimated_cost
+    return expected_net / estimated_cost if estimated_cost > 0 else 0
+
+
+def calculate_profit_score(expected_value: float, win_probability: float, 
+                         expected_roi: float, market_conditions: dict) -> float:
+    """Combined profitability score for ranking auctions"""
+    
+    # Base score from expected value and win probability
+    base_score = expected_value * win_probability
+    
+    # ROI multiplier
+    roi_multiplier = max(0.5, 1 + expected_roi)
+    
+    # Market conditions adjustment
+    market_multiplier = market_conditions.get('opportunity_factor', 1.0)
+    
+    return base_score * roi_multiplier * market_multiplier
+
+
+def calculate_recommended_bid(auction: dict, win_probability: float, expected_value: float) -> int:
+    """Calculate recommended bid amount"""
+    
+    # Base bid on expected value and win probability
+    base_bid = expected_value * 0.8  # Start at 80% of expected value
+    
+    # Adjust based on win probability
+    if win_probability > 0.8:
+        bid_multiplier = 0.9  # We're likely to win, bid conservatively
+    elif win_probability > 0.5:
+        bid_multiplier = 1.1  # Competitive situation
+    else:
+        bid_multiplier = 1.3  # Need to bid aggressively
+    
+    return max(1, int(base_bid * bid_multiplier))
+
+
+def calculate_confidence_level(historical_data: dict, competitor_analysis: dict) -> float:
+    """Calculate confidence in our predictions"""
+    
+    # More historical data = higher confidence
+    data_confidence = min(1.0, historical_data['sample_size'] / 10.0)
+    
+    # Known competitors = higher confidence
+    known_competitors = len([p for p in competitor_analysis.get('individual_predictions', {}).values() if p > 0])
+    competitor_confidence = min(1.0, known_competitors / 3.0)
+    
+    return (data_confidence + competitor_confidence) / 2
+
+
+def assess_market_conditions(current_round: int) -> dict:
+    """Assess overall market conditions"""
+    global learning_data
+    
+    recent_outcomes = learning_data['auction_outcomes'][-10:] if learning_data['auction_outcomes'] else []
+    
+    if not recent_outcomes:
+        return {'opportunity_factor': 1.0, 'market_trend': 'unknown'}
+    
+    # Analyze if market is becoming more or less competitive
+    recent_competition = [outcome['competition_level'] for outcome in recent_outcomes]
+    avg_competition = statistics.mean(recent_competition) if recent_competition else 1.0
+    
+    # Higher competition = lower opportunity
+    opportunity_factor = max(0.5, 2.0 - avg_competition)
+    
+    return {
+        'opportunity_factor': opportunity_factor,
+        'market_trend': 'competitive' if avg_competition > 1.5 else 'moderate',
+        'round_factor': 1.0 + (current_round * 0.02)  # Slight urgency increase over time
+    }
+
+
+def optimize_budget_allocation(auction_analyses: List[Tuple], total_budget: int) -> dict:
+    """Optimize budget allocation across auctions using portfolio theory"""
+    
+    if not auction_analyses:
+        return {}
+    
+    # Reserve 30% of budget for safety
+    available_budget = int(total_budget * 0.7)
+    allocation = {}
+    
+    # Calculate total profit score for weighting
+    total_profit_score = sum(analysis['profit_score'] for _, _, analysis in auction_analyses if analysis['profit_score'] > 0)
+    
+    if total_profit_score == 0:
+        return {}
+    
+    # Allocate budget proportionally to profit scores
+    for auction_id, auction, analysis in auction_analyses:
+        if analysis['profit_score'] > 0 and analysis['win_probability'] > 0.2:
+            # Proportional allocation based on profit score
+            proportion = analysis['profit_score'] / total_profit_score
+            base_allocation = int(available_budget * proportion)
+            
+            # Apply minimum and maximum constraints
+            min_bid = max(1, int(analysis['expected_value'] * 0.3))
+            max_bid = min(available_budget, analysis['recommended_bid'])
+            
+            final_allocation = max(min_bid, min(base_allocation, max_bid))
+            
+            if final_allocation > 0:
+                allocation[auction_id] = final_allocation
+                available_budget -= final_allocation
+    
+    return allocation
+
+
+def calculate_competition_level(bids: List) -> float:
+    """Calculate how competitive an auction was"""
+    if len(bids) <= 1:
+        return 0.5
+    
+    bid_amounts = [bid['gold'] for bid in bids]
+    max_bid = max(bid_amounts)
+    avg_bid = statistics.mean(bid_amounts)
+    
+    # Higher ratio of max to average = more competitive
+    return min(2.0, max_bid / avg_bid if avg_bid > 0 else 1.0)
+
+
+def classify_competitor_strategy(bid_history: List[int]) -> str:
+    """Classify competitor's bidding strategy"""
+    if len(bid_history) < 3:
+        return 'unknown'
+    
+    avg_bid = statistics.mean(bid_history)
+    recent_bids = bid_history[-3:]
+    recent_avg = statistics.mean(recent_bids)
+    
+    if recent_avg > avg_bid * 1.5:
+        return 'aggressive'
+    elif recent_avg < avg_bid * 0.7:
+        return 'conservative'
+    else:
+        return 'moderate'
+
+
+def assess_risk_profile(bid_history: List[int]) -> str:
+    """Assess competitor's risk profile"""
+    if len(bid_history) < 3:
+        return 'unknown'
+    
+    # Calculate coefficient of variation
+    if statistics.mean(bid_history) > 0:
+        cv = statistics.stdev(bid_history) / statistics.mean(bid_history)
+        if cv > 0.8:
+            return 'high_risk'
+        elif cv < 0.3:
+            return 'low_risk'
+        else:
+            return 'moderate_risk'
+    
+    return 'unknown'
+
+
+if __name__ == "__main__":
+    
+    host = "localhost"
+    agent_name = "{}_{}".format(os.path.basename(__file__), random.randint(1, 1000))
+    player_id = "id_of_human_player"
+    port = 8000
+
+    game: AuctionGameClient = AuctionGameClient(host=host,
+                            agent_name=agent_name,
+                            player_id=player_id,
+                            port=port)
+    try:
+        game.run(advanced_predictive_strategy)
+    except KeyboardInterrupt:
+        print("<interrupt - shutting down>")
+
+    print("<game is done>")
