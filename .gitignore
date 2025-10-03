@@ -207,3 +207,6 @@ marimo/_lsp/
 __marimo__/
 *.mp4
 *.m4a
+logs/*.jsonl
+TESTING_GUIDE.md
+test_multi_agents.py
