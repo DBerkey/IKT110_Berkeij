@@ -28,26 +28,6 @@ AGENT_CONFIGS = [
         "enabled": True
     },
     {
-        "name": "ML Predictor", 
-        "path": "dnd_auction_agents/agent_ml_predictor",
-        "enabled": True
-    },
-    {
-        "name": "Smart Predictor",
-        "path": "dnd_auction_agents/agent_smart_predictor", 
-        "enabled": True
-    },
-    {
-        "name": "Predictive Bidding",
-        "path": "dnd_auction_agents/agent_predictive_bidding",
-        "enabled": True
-    },
-    {
-        "name": "Partial Split",
-        "path": "dnd_auction_agents/agent_partial_split",
-        "enabled": True
-    },
-    {
         "name": "Random Single",
         "path": "dnd_auction_game/example_agents/agent_random_single.py",
         "enabled": True
@@ -61,7 +41,12 @@ AGENT_CONFIGS = [
         "name": "Tiny Bid",
         "path": "dnd_auction_game/example_agents/agent_tiny_bid.py", 
         "enabled": True
-    }
+    },
+    {
+        "name": "Predictive Robust",
+        "path": "dnd_auction_agents/agent_predictive_robust.py",
+        "enabled": True
+    },
 ]
 
 # Game settings
