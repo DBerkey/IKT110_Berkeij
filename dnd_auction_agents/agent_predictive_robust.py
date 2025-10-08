@@ -1,13 +1,13 @@
 import random
 import os
-from typing import Any, List
+from typing import Any, List, Dict
 from dnd_auction_game import AuctionGameClient
 
 # Global variables for learning (kept minimal)
-auction_history: list[dict[str, Any]] = []
-agent_performance = {}
-def predictive_bidding(agent_id: str, current_round: int, states: dict[str, dict[str, Any]], 
-                       auctions: dict[str, dict[str, Any]], prev_auctions: dict[str, dict[str, Any]], bank_state: dict[str, Any]) -> dict[str, int]:
+auction_history: List[Dict[str, Any]] = []
+agent_performance: Dict[str, Dict[str, int]] = {}
+def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict[str, Any]], 
+                       auctions: Dict[str, Dict[str, Any]], prev_auctions: Dict[str, Dict[str, Any]], bank_state: Dict[str, Any]) -> Dict[str, int]:
     """
     Params:
     - agent_id: str - Unique identifier for this agent
@@ -141,7 +141,7 @@ def predictive_bidding(agent_id: str, current_round: int, states: dict[str, dict
         
         # Print performance info
         if current_round % 10 == 0 or current_round < 5:
-            perf = agent_performance[agent_id]
+            perf: Dict[str, int] = agent_performance[agent_id]
             print(f"Round {current_round}: Bids={len(bids)}, Total={sum(bids.values())}, Gold={current_gold}")
             print(f"  Performance: {perf['rounds']} rounds, avg {perf['total_bids']/perf['rounds']:.1f} bids/round")
     except:

@@ -1,17 +1,24 @@
 import random
 import os
-import json
 from typing import Any, Dict
 from dnd_auction_game import AuctionGameClient
 
 # Global variables to track agent state across rounds
 previous_gold = 0
 
-def enhanced_interest_split_strategy(agent_id: str, current_round: int, states: dict[str, dict[str, Any]], 
-                                   auctions: dict[str, Dict[str, Any]], prev_auctions: dict[str, Dict[str, Any]], 
-                                   bank_state: dict[str, Any]) -> Dict[str, int]:
+def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str, Dict[str, Any]], 
+                                   auctions: Dict[str, Dict[str, Any]], prev_auctions: Dict[str, Dict[str, Any]], 
+                                   bank_state: Dict[str, Any]) -> Dict[str, int]:
     """
-    Enhanced strategy: Dynamically adjustable interest-split strategy with configurable parameters
+    params:
+    - agent_id: str - Unique identifier for this agent
+    - current_round: int - Current round number (0-indexed)
+    - states: dict - Current states of all agents, keyed by agent_id
+    - auctions: dict - Current auctions available, keyed by auction_id
+    - prev_auctions: dict - Previous auctions with results, keyed by auction_id
+    - bank_state: dict - Current state of the bank (gold income, etc.)
+    returns:
+    - bids: dict - Bids to place, keyed by auction_id with bid amount as value
     """
     global previous_gold
     
@@ -27,9 +34,9 @@ def enhanced_interest_split_strategy(agent_id: str, current_round: int, states: 
     
     # Calculate interest earned this round
     gold_difference = current_gold - previous_gold
-    
-    bids = {}
-    
+
+    bids: Dict[str, int] = {}
+
     # Strategy phase: Wait for specified rounds, then bid with enhanced logic
     if current_round >= wait_rounds and len(auctions) > 0:
         # Get current bank limit for this round
@@ -41,7 +48,7 @@ def enhanced_interest_split_strategy(agent_id: str, current_round: int, states: 
             current_bank_limit = 2000  # Default fallback
         
         # Calculate expected values for all auctions
-        auction_values = []
+        auction_values: list[tuple[str, dict[str, Any], int]] = []
         for auction_id, auction in auctions.items():
             expected_value = auction['die'] * auction['num'] + auction['bonus']
             auction_values.append((auction_id, auction, expected_value))
@@ -91,7 +98,7 @@ def enhanced_interest_split_strategy(agent_id: str, current_round: int, states: 
                 actual_bid = min(enhanced_bid_per_auction, remaining_gold)
                 
                 if actual_bid > 0 and expected_value > 0:
-                    bids[auction_id] = actual_bid
+                    bids[auction_id] = int(actual_bid)
                     remaining_gold -= actual_bid
                     successful_bids += 1
                     print(f"  Conservative bid {actual_bid} on {auction_id} (EV: {expected_value})")
@@ -113,13 +120,13 @@ def enhanced_interest_split_strategy(agent_id: str, current_round: int, states: 
                 actual_bid = min(bid_per_top_auction, aggressive_gold, remaining_gold)
                 
                 if actual_bid > 0:
-                    bids[auction_id] = actual_bid
+                    bids[auction_id] = int(actual_bid)
                     aggressive_gold -= actual_bid
                     remaining_gold -= actual_bid
                     successful_bids += 1
                     print(f"  Aggressive bid {actual_bid} on {auction_id} (EV: {expected_value})")
         
-        print(f"Total bids placed: {successful_bids}/{len(auctions)}, Total amount: {sum(bids.values()):,}")
+        print(f"Total bids placed: {successful_bids}/{len(auctions)}, Total amount: {sum(int(v) for v in bids.values()):,}")
 
     # Update for next round
     previous_gold = current_gold
@@ -145,7 +152,7 @@ if __name__ == "__main__":
                             player_id=player_id,
                             port=port)
     try:
-        game.run(enhanced_interest_split_strategy)
+        game.run(interest_split_strategy)
     except KeyboardInterrupt:
         print("<interrupt - shutting down>")
 
