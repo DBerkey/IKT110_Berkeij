@@ -23,8 +23,8 @@ from typing import List, Dict, Optional
 # Configure your agents here
 AGENT_CONFIGS = [
     {
-        "name": "Enhanced Partial Split",
-        "path": "dnd_auction_agents/enhanced_agent_partial_split.py",
+        "name": "Partial Split",
+        "path": "dnd_auction_agents/agent_partial_split.py",
         "enabled": True
     },
     {
