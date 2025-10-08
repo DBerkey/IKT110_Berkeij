@@ -49,7 +49,7 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
     
     # Adjust based on income
     if next_round_gold_income > 1050:
-        max_bid = 150  # Much higher than tiny_bid's 100
+        max_bid = 200
         base_bid = 40
     elif next_round_gold_income > 800:
         max_bid = 120
@@ -85,7 +85,7 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
     bids: dict[str, int] = {}
 
     random_int = random.randint(1, 100)
-    if random_int <= 2 and current_gold > 50000: 
+    if random_int <= 5 and current_gold > 20000: 
         top_auctions = list(auctions.keys())[:5]
         if top_auctions:
             chosen_auction = random.choice(top_auctions)
@@ -111,8 +111,6 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
                     bid = random.randint(int(max_bid * 0.5), int(max_bid * 0.8))
                 elif expected_value > 8:  # Medium value auction
                     bid = random.randint(int(max_bid * 0.3), int(max_bid * 0.6))
-                elif expected_value > 1:  # Low value auction
-                    bid = random.randint(base_bid, int(max_bid * 0.4))
                 else:  # negative or zero expected value
                     bid = 0  
                 

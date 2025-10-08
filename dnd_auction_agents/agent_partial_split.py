@@ -98,36 +98,11 @@ def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str,
         remaining_gold = usable_gold
         successful_bids = 0
         
-        # For bottom 70%: Use conservative interest-based bidding
-        if bottom_70_percent:
-            base_bid_per_auction = max(1, int(usable_gold / len(bottom_70_percent)))
-            enhanced_bid_per_auction = int(base_bid_per_auction)
-            
-            print(f"Bottom 70% strategy:")
-            print(f"  Base bid per auction: {base_bid_per_auction}")
-            print(f"  Enhanced bid per auction: {enhanced_bid_per_auction}")
-            
-            for auction_id, auction, expected_value in bottom_70_percent:
-                if remaining_gold <= 0:
-                    break
-                    
-                actual_bid = min(enhanced_bid_per_auction, remaining_gold)
-                
-                if actual_bid > 0 and expected_value > 0:
-                    # Apply multiplier if stagnant
-                    final_bid = int(actual_bid * bid_multiplier)
-                    final_bid = min(final_bid, remaining_gold)  # Ensure we don't exceed available gold
-                    
-                    bids[auction_id] = final_bid
-                    remaining_gold -= final_bid
-                    successful_bids += 1
-                    print(f"  Conservative bid {final_bid} on {auction_id} (EV: {expected_value})")
-        
         # For top 30%: Bid everything above bank limit
         if top_30_percent and gold_above_limit > 0:
             # Use all gold above bank limit for top-value auctions
             aggressive_gold = min(gold_above_limit, remaining_gold)
-            bid_per_top_auction = max(1, int(aggressive_gold / len(top_30_percent)))
+            bid_per_top_auction = max(1, int(aggressive_gold))
             
             print(f"Top 30% strategy:")
             print(f"  Aggressive gold available: {aggressive_gold:,}")
@@ -151,6 +126,7 @@ def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str,
                     print(f"  Aggressive bid {final_bid} on {auction_id} (EV: {expected_value})")
         
         print(f"Total bids placed: {successful_bids}/{len(auctions)}, Total amount: {sum(int(v) for v in bids.values()):,}")
+{sum(int(v) for v in bids.values()):,}")
 
     # Update for next round - track gold AFTER spending on bids
     total_spent = sum(int(v) for v in bids.values())
