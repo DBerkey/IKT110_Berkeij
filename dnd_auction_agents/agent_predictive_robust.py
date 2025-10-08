@@ -85,7 +85,7 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
     bids: dict[str, int] = {}
 
     random_int = random.randint(1, 100)
-    if random_int <= 2: # bid 80% of all gold on one of the top 5 auctions
+    if random_int <= 2 and current_gold > 50000: 
         top_auctions = list(auctions.keys())[:5]
         if top_auctions:
             chosen_auction = random.choice(top_auctions)

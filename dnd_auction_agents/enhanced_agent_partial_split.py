@@ -5,6 +5,8 @@ from dnd_auction_game import AuctionGameClient
 
 # Global variables to track agent state across rounds
 previous_gold = 0
+previous_points = 0
+rounds_without_point_improvement = 0
 
 def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str, Dict[str, Any]], 
                                    auctions: Dict[str, Dict[str, Any]], prev_auctions: Dict[str, Dict[str, Any]], 
@@ -20,7 +22,7 @@ def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str,
     returns:
     - bids: dict - Bids to place, keyed by auction_id with bid amount as value
     """
-    global previous_gold
+    global previous_gold, previous_points, rounds_without_point_improvement
     
     minimum_reserve = 5000
     wait_rounds = 4
@@ -32,8 +34,22 @@ def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str,
     print(f"\n=== Round {current_round} Enhanced Strategy ===")
     print(f"Current: {current_gold:,} gold, {current_points:,} points")
     
-    # Calculate interest earned this round
-    gold_difference = current_gold - previous_gold
+    # Track point improvement and detect stagnation
+    if current_points > previous_points:
+        rounds_without_point_improvement = 0
+    else:
+        rounds_without_point_improvement += 1
+    
+    # Apply 10% bid multiplier if no point improvement for 10 rounds
+    bid_multiplier = 1.1 if rounds_without_point_improvement >= 10 else 1.0
+    
+    print(f"Point tracking:")
+    print(f"  Previous points: {previous_points:,}")
+    print(f"  Current points: {current_points:,}")
+    print(f"  Rounds without improvement: {rounds_without_point_improvement}")
+    print(f"  Bid multiplier: {bid_multiplier:.1f}x")
+    if rounds_without_point_improvement >= 10:
+        print(f"STAGNATION DETECTED - Applying 10% bid boost!")
 
     bids: Dict[str, int] = {}
 
@@ -84,7 +100,7 @@ def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str,
         
         # For bottom 70%: Use conservative interest-based bidding
         if bottom_70_percent:
-            base_bid_per_auction = max(1, int(gold_difference / len(bottom_70_percent)))
+            base_bid_per_auction = max(1, int(usable_gold / len(bottom_70_percent)))
             enhanced_bid_per_auction = int(base_bid_per_auction)
             
             print(f"Bottom 70% strategy:")
@@ -98,10 +114,14 @@ def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str,
                 actual_bid = min(enhanced_bid_per_auction, remaining_gold)
                 
                 if actual_bid > 0 and expected_value > 0:
-                    bids[auction_id] = int(actual_bid)
-                    remaining_gold -= actual_bid
+                    # Apply multiplier if stagnant
+                    final_bid = int(actual_bid * bid_multiplier)
+                    final_bid = min(final_bid, remaining_gold)  # Ensure we don't exceed available gold
+                    
+                    bids[auction_id] = final_bid
+                    remaining_gold -= final_bid
                     successful_bids += 1
-                    print(f"  Conservative bid {actual_bid} on {auction_id} (EV: {expected_value})")
+                    print(f"  Conservative bid {final_bid} on {auction_id} (EV: {expected_value})")
         
         # For top 30%: Bid everything above bank limit
         if top_30_percent and gold_above_limit > 0:
@@ -120,16 +140,22 @@ def interest_split_strategy(agent_id: str, current_round: int, states: Dict[str,
                 actual_bid = min(bid_per_top_auction, aggressive_gold, remaining_gold)
                 
                 if actual_bid > 0:
-                    bids[auction_id] = int(actual_bid)
-                    aggressive_gold -= actual_bid
-                    remaining_gold -= actual_bid
+                    # Apply multiplier if stagnant
+                    final_bid = int(actual_bid * bid_multiplier)
+                    final_bid = min(final_bid, aggressive_gold, remaining_gold)  # Ensure we don't exceed available gold
+                    
+                    bids[auction_id] = final_bid
+                    aggressive_gold -= final_bid
+                    remaining_gold -= final_bid
                     successful_bids += 1
-                    print(f"  Aggressive bid {actual_bid} on {auction_id} (EV: {expected_value})")
+                    print(f"  Aggressive bid {final_bid} on {auction_id} (EV: {expected_value})")
         
         print(f"Total bids placed: {successful_bids}/{len(auctions)}, Total amount: {sum(int(v) for v in bids.values()):,}")
 
-    # Update for next round
-    previous_gold = current_gold
+    # Update for next round - track gold AFTER spending on bids
+    total_spent = sum(int(v) for v in bids.values())
+    previous_gold = current_gold - total_spent
+    previous_points = current_points
     
     print(f"=== End Round {current_round} ===\n")
     return bids

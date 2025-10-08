@@ -47,6 +47,21 @@ AGENT_CONFIGS = [
         "path": "dnd_auction_agents/agent_predictive_robust.py",
         "enabled": True
     },
+    {
+        "name": "Predictive Robust2",
+        "path": "dnd_auction_agents/agent_predictive_robust.py",
+        "enabled": True
+    },
+    {
+        "name": "Predictive Robust3",
+        "path": "dnd_auction_agents/agent_predictive_robust.py",
+        "enabled": True
+    },
+    {
+        "name": "Predictive Robust4",
+        "path": "dnd_auction_agents/agent_predictive_robust.py",
+        "enabled": True
+    },
 ]
 
 # Game settings
