@@ -82,13 +82,17 @@ def individual_bot_strategy(agent_id: str, current_round: int, states: Dict[str,
     target_auction_id, _, expected_value = ranked_auctions[bot_target_rank]
     
     # Calculate bid amount based on expected value and available gold
-    base_bid = max(1, int(expected_value * 1.5))  # Bid 1.5x expected value
+    # Be more conservative with bidding to avoid running out of gold
+    base_bid = max(1, int(expected_value * 0.8))  # Bid 0.8x expected value (more conservative)
     
-    # Ensure we don't bid more than we can afford (keep some reserve)
-    reserve_gold = 100  # Keep some gold in reserve
+    # Ensure we don't bid more than we can afford (keep larger reserve)
+    reserve_gold = max(500, current_gold // 10)  # Keep at least 500 gold or 10% of current gold
     max_affordable_bid = max(1, current_gold - reserve_gold)
     
-    bid_amount = min(base_bid, max_affordable_bid)
+    # Also limit bid to a reasonable percentage of current gold
+    max_percentage_bid = max(1, current_gold // 20)  # Never bid more than 5% of current gold
+    
+    bid_amount = min(base_bid, max_affordable_bid, max_percentage_bid)
     
     # Ensure we have enough gold
     if current_gold >= bid_amount and bid_amount > 0:
@@ -129,10 +133,10 @@ if __name__ == "__main__":
     individual_bot_strategy.target_auction_rank = target_auction_rank
     individual_bot_strategy.bid_turn_in_cycle = bid_turn_in_cycle
     
-    # Configure connection
+    # Configure connection - each bot needs completely unique identifiers
     host = "localhost"
     agent_name = f"bot_{bot_id}_rank{target_auction_rank+1}_turn{bid_turn_in_cycle}"
-    player_id = f"bot_player_{bot_id}"
+    player_id = f"unique_bot_player_{bot_id}_{target_auction_rank}_{bid_turn_in_cycle}"
     port = 8000
 
     print(f"🤖 Starting Individual Bot #{bot_id}")

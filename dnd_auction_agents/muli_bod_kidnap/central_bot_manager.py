@@ -79,7 +79,7 @@ class BotManager:
             print(f"❌ Failed to start Bot #{bot_id}: {e}")
             return None
     
-    def start_all_bots(self, stagger_delay: float = 0.1) -> bool:
+    def start_all_bots(self, stagger_delay: float = 0.2) -> bool:
         """Start all 100 bots with optional staggered delays"""
         print("🚀 Starting 100 Individual Auction Bots...")
         print("=" * 60)
