@@ -59,10 +59,9 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
     with open("dnd_auction_agents/config.json") as config_file:
         config = json.load(config_file)
 
-    # Use historical data to be smarter about bidding
+    # Use historical data to be smarter about bidding (excluding top 10 auction data)
     if len(auction_history) > 5:
         try:
-            # Calculate average winning bids from recent history
             recent_winners: List[int] = []
             for auction in auction_history[-10:]:
                 auction_bids: list[dict[str, Any]] = auction.get('bids', [])
@@ -70,13 +69,13 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
                     gold_bids: list[int] = [int(bid.get('gold', 0)) for bid in auction_bids if 'gold' in bid]
                     if gold_bids:
                         winning_bid: int = max(gold_bids)
-                        if winning_bid > 0:
+                        if winning_bid > 0 and winning_bid < 500: 
                             recent_winners.append(winning_bid)
             
             if recent_winners:
                 avg_winning_bid = sum(recent_winners) / len(recent_winners)
-                # Adjust our max bid based on what typically wins
-                max_bid = min(max_bid * config.get("max_multiplier", 1.5), int(avg_winning_bid * 1.2))
+                # Adjust our max bid based on what typically wins (more conservative)
+                max_bid = min(max_bid * config.get("max_multiplier", 1.5), int(avg_winning_bid * 1.1))
         except:
             # If calculation fails, stick with defaults
             pass

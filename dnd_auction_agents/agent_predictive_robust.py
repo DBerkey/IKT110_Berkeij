@@ -21,6 +21,14 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
     - bids: dict - Bids to place, keyed by auction_id with bid amount as value
     """
     global auction_history, agent_performance
+
+    # Randomize the order of auctions to avoid predictable patterns
+    auction_items = list(auctions.items())
+    random.shuffle(auction_items)
+    auctions = dict(auction_items)
+
+    # Randomize auction history to avoid overfitting to recent patterns
+    random.shuffle(auction_history)
     
     # Get current state 
     agent_state = states[agent_id]
@@ -77,7 +85,7 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
             if recent_winners:
                 avg_winning_bid = sum(recent_winners) / len(recent_winners)
                 # Adjust our max bid based on what typically wins
-                max_bid = min(max_bid * config.get("max_multiplier", 1.5), int(avg_winning_bid * 1.2))
+                max_bid = min(max_bid * config.get("max_multiplier", 1.5), int(avg_winning_bid * 1.4))
         except:
             # If calculation fails, stick with defaults
             pass
@@ -90,7 +98,7 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
     bids: dict[str, int] = {}
 
     random_int = random.randint(1, 100)
-    if random_int <= 5 and current_gold > 20000: 
+    if random_int <= 3 and current_gold > 20000: 
         top_auctions = list(auctions.keys())[:5]
         if top_auctions:
             chosen_auction = random.choice(top_auctions)
@@ -113,9 +121,11 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
                 if expected_value > 25:  # Very high value - bid aggressively
                     bid = random.randint(int(max_bid * 0.8), max_bid)
                 elif expected_value > 15:  # High value auction
-                    bid = random.randint(int(max_bid * 0.5), int(max_bid * 0.8))
+                    bid = random.randint(int(max_bid * 0.6), int(max_bid * 0.7))
                 elif expected_value > 8:  # Medium value auction
-                    bid = random.randint(int(max_bid * 0.3), int(max_bid * 0.6))
+                    bid = random.randint(int(max_bid * 0.4), int(max_bid * 0.6))
+                elif expected_value > 0:  # Low value auction
+                    bid = random.randint(base_bid, int(max_bid * 0.2))
                 else:  # negative or zero expected value
                     bid = 0  
                 
@@ -154,10 +164,10 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
     return bids
 
 if __name__ == "__main__":
-    host = "localhost"
-    agent_name = "{}_{}".format(os.path.basename(__file__), random.randint(1, 1000))
-    player_id = "id_of_human_player"
+    host = "opentsetlin.com"
+    player_id = "Douwe Berkeij"
     port = 8000
+    agent_name = 'Dutch Courage                                                  ☠'
 
     game: AuctionGameClient = AuctionGameClient(host=host,
                                 agent_name=agent_name,

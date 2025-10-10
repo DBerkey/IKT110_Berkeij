@@ -65,7 +65,7 @@ if __name__ == "__main__":
     individual_bot_strategy.target_auction_rank = target_rank
     individual_bot_strategy.bid_turn_in_cycle = bid_turn
 
-    host = "localhost"
+    host = "opentsetlin.com"
     port = 8000
     agent_name = f"bot_{bot_id}_rank{target_rank+1}_turn{bid_turn}"
     player_id = f"bot_player_{bot_id}"
