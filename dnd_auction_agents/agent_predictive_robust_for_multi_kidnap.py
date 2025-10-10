@@ -1,6 +1,7 @@
 import random
 import os
 from typing import Any, List, Dict
+import json
 from dnd_auction_game import AuctionGameClient
 
 # Global variables for learning (kept minimal)
@@ -55,6 +56,9 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
         max_bid = 120
         base_bid = 25
     
+    with open("dnd_auction_agents/config.json") as config_file:
+        config = json.load(config_file)
+
     # Use historical data to be smarter about bidding
     if len(auction_history) > 5:
         try:
@@ -72,13 +76,13 @@ def predictive_bidding(agent_id: str, current_round: int, states: Dict[str, Dict
             if recent_winners:
                 avg_winning_bid = sum(recent_winners) / len(recent_winners)
                 # Adjust our max bid based on what typically wins
-                max_bid = min(max_bid * 1.5, int(avg_winning_bid * 1.2))
+                max_bid = min(max_bid * config.get("max_multiplier", 1.5), int(avg_winning_bid * 1.2))
         except:
             # If calculation fails, stick with defaults
             pass
     
     # Progressive bidding strategy based on round
-    round_multiplier = 1.0 + (current_round * 0.03)  # Get more aggressive over time
+    round_multiplier = 1.0 + (current_round * config.get("round_multiplier", 0.03))  # Get more aggressive over time
     max_bid = int(max_bid * round_multiplier)
     
     # Bid on auctions (skip top 10 auctions)
