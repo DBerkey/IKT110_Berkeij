@@ -1,5 +1,0 @@
-# DnD Auction Agent Dashboard Requirements
-dash==2.14.1
-plotly==5.17.0
-pandas==2.1.1
-numpy==1.24.3
