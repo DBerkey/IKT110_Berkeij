@@ -17,7 +17,7 @@ def load_data(base_path):
     
     # Load transactions data
     transactions = {}
-    for i in range(4):  # 0-3 transaction files
+    for i in range(5):  # 0-4 transaction files
         file_path = f"{base_path}/transactions/transactions_{i}.json"
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -25,7 +25,7 @@ def load_data(base_path):
     
     # Load schedules data
     schedules = {}
-    for i in range(4):  # 0-3 schedule files
+    for i in range(5):  # 0-4 schedule files
         file_path = f"{base_path}/schedules/schedules_{i}.json"
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -33,7 +33,7 @@ def load_data(base_path):
             
     # Load prices data
     prices = {}
-    for i in range(4):  # 0-3 price files
+    for i in range(5):  # 0-4 price files
         file_path = f"{base_path}/prices/prices_{i}.json"
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -41,7 +41,7 @@ def load_data(base_path):
             
     # Load amounts data
     amounts = {}
-    for i in range(4):  # 0-3 amounts files
+    for i in range(5):  # 0-4 amounts files
         file_path = f"{base_path}/amounts/amounts_{i}.json"
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -110,7 +110,8 @@ def calculate_daily_inventory(transactions, amounts):
     # Days of the week
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     
-    for week in range(4):  # 4 weeks of data
+    num_weeks = len(amounts)
+    for week in range(5):  # Use actual number of weeks
         # Get starting inventory for this week
         starting_inventory = amounts[week].copy()
         
@@ -767,6 +768,34 @@ def plot_sellout_details(inventory_df, save_path=None):
         plt.show()
     
     plt.close()
+
+def save_weekly_sellout_plots(inventory_df, output_dir):
+    """Generate and save a sellout plot for every week, showing all products in one plot"""
+    sellout_dir = os.path.join(output_dir, "07_inventory_analysis", "weekly_sellouts")
+    os.makedirs(sellout_dir, exist_ok=True)
+    weeks = sorted(inventory_df['week'].unique())
+    products = sorted(inventory_df['product'].unique())
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    cmap = plt.get_cmap('tab20')
+    color_list = [cmap(i % cmap.N) for i in range(len(products))]
+    for week in weeks:
+        week_data = inventory_df[inventory_df['week'] == week]
+        plt.figure(figsize=(14, 8))
+        for idx, product in enumerate(products):
+            product_data = week_data[week_data['product'] == product]
+            # Get remaining inventory for each day
+            inventory_by_day = product_data.set_index('day_of_week').reindex(days)['remaining_inventory'].fillna(0)
+            plt.plot(days, inventory_by_day, marker='o', label=product, color=color_list[idx])
+        plt.title(f'Remaining Inventory by Day - Week {week}')
+        plt.xlabel('Day of Week')
+        plt.ylabel('Remaining Inventory')
+        plt.xticks(rotation=45)
+        plt.legend(title='Product', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small', ncol=2)
+        plt.tight_layout()
+        save_path = os.path.join(sellout_dir, f'week_{week}_inventory.png')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"✅ Saved inventory decrease plot for week {week}: {save_path}")
 
 def create_inventory_report(inventory_df, sellout_summary):
     """Create a text report of inventory analysis"""
@@ -1550,6 +1579,8 @@ def generate_all_saved_analyses(df, prices, supplier_prices, transactions, amoun
     inventory_df = calculate_daily_inventory(transactions, amounts)
     sellout_summary = analyze_sellouts(inventory_df)
     save_inventory_analysis(inventory_df, sellout_summary, output_dir)
+    # Generate weekly sellout plots for all products
+    save_weekly_sellout_plots(inventory_df, output_dir)
     
     # Calculate profit statistics for summary
     total_profit = df_with_profit['total_profit'].sum()
