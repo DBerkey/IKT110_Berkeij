@@ -16,6 +16,45 @@ def gradient_J_squared_residual(theta, bias, X, y):
     grad_bias = np.sum(error)              # scalar
     return grad_theta, grad_bias
 
+def sgd(X, y, learning_rate=0.1, epochs=1000, batch_size=2, random_seed=None, bias=0.0):
+    # X: shape (m, n_features)
+    # y: shape (m, 1) or (m,)
+    if random_seed is not None:
+        np.random.seed(random_seed)
+    m, n_features = X.shape
+    # initialize weights and bias
+    theta = np.random.randn(n_features, 1)  # shape (n_features,1)
+    cost_history = []
+
+    for epoch in range(epochs):
+        indices = np.random.permutation(m)
+        X_shuffled = X[indices]
+        y_shuffled = y[indices]
+
+        for i in range(0, m, batch_size):
+            X_batch = X_shuffled[i:i + batch_size]
+            y_batch = y_shuffled[i:i + batch_size]
+
+            # ensure shapes: X_batch (b, n), theta (n,1) -> preds (b,1)
+            preds = X_batch.dot(theta) + bias
+            error = preds - y_batch.reshape(-1, 1)  # make column vector
+
+            grad_theta = (2.0 / X_batch.shape[0]) * (X_batch.T.dot(error))  # (n,1)
+            grad_bias = (2.0 / X_batch.shape[0]) * error.sum()              # scalar
+
+            theta = theta - learning_rate * grad_theta
+            bias = bias - learning_rate * grad_bias
+
+        # optionally compute cost on whole set (mean squared error)
+        preds_full = X.dot(theta) + bias
+        cost = np.mean((preds_full - y.reshape(-1, 1)) ** 2)
+        cost_history.append(cost)
+
+        if epoch % 100 == 0:
+            print(f"Epoch {epoch}, Cost: {cost:.6f}")
+
+    return theta, bias, cost_history
+
 # the dataset: plain features (no column of ones) and targets
 X = np.array([[0.5], [1.0], [2.0]])    # shape (m, n_features)
 y = np.array([[1.0], [1.5], [2.5]])    # shape (m, 1)
@@ -26,22 +65,10 @@ theta = np.zeros((n_features, 1))    # weight vector (n_features,1)
 bias = 0.0                           # scalar bias
 learning_rate = 0.1
 
-# run GD
-j_history = []
-n_iters = 10
-for it in range(n_iters):
-    j = J_squared_residual(theta, bias, X, y)
-    j_history.append(j)
-
-    grad_theta, grad_bias = gradient_J_squared_residual(theta, bias, X, y)
-
-    # mean gradients
-    grad_theta = (1/m) * grad_theta
-    grad_bias = (1/m) * grad_bias
-
-    # parameter updates
-    theta = theta - learning_rate * grad_theta
-    bias = bias - learning_rate * grad_bias
+# run SGD
+n_epochs = 20
+batch_size = 1
+theta, bias, j_history = sgd(X, y, learning_rate, n_epochs, batch_size, bias=bias)
 
 print("theta shape:", theta.shape)
 
@@ -61,5 +88,5 @@ v = ((y - y.mean())**2).sum()
 print("R^2: {:.6f}".format(1 - (u/v)))
 
 # plot the result
-fig = px.line(x=list(range(n_iters+1)), y=j_history, labels={'x':'Iteration', 'y':'L2 Loss (Sum of Squared Residuals)'}, title='Gradient Descent: L2 Loss vs Iteration')
+fig = px.line(j_history, title="J(theta) - Loss History")
 fig.write_image("Task4_GD_L2_Loss.png")
