@@ -1,0 +1,9 @@
+# Requirements for the DND Auction Game Launcher
+
+# Core dependencies (should already be installed with the game)
+uvicorn
+fastapi
+websockets
+
+# Additional utilities that might be needed
+machineid
