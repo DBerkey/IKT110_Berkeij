@@ -1,5 +1,7 @@
 import numpy as np
 import plotly.express as px
+import time
+from numba import jit
 
 # Vectorized GD without augmented matrix: handle bias separately
 def predict(theta, bias, X):
@@ -16,6 +18,7 @@ def gradient_J_squared_residual(theta, bias, X, y):
     grad_bias = np.sum(error)              # scalar
     return grad_theta, grad_bias
 
+@jit(nopython=True)
 def sgd(X, y, learning_rate=0.1, epochs=1000, batch_size=2, random_seed=None, bias=0.0):
     # X: shape (m, n_features)
     # y: shape (m, 1) or (m,)
@@ -51,7 +54,7 @@ def sgd(X, y, learning_rate=0.1, epochs=1000, batch_size=2, random_seed=None, bi
         cost_history.append(cost)
 
         if epoch % 100 == 0:
-            print(f"Epoch {epoch}, Cost: {cost:.6f}")
+            print("Epoch: ", epoch , " Cost: ", float(cost))
 
     return theta, bias, cost_history
 
