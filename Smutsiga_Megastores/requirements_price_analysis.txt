@@ -1,0 +1,4 @@
+pandas>=1.0
+numpy>=1.18
+# optional: scipy for more advanced stats
+# scipy>=1.4

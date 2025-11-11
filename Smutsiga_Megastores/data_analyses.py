@@ -17,7 +17,7 @@ def load_data(base_path):
     
     # Load transactions data
     transactions = {}
-    for i in range(6):  # 0-5 transaction files
+    for i in range(8):  # 0-7 transaction files
         file_path = f"{base_path}/transactions/transactions_{i}.json"
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -25,7 +25,7 @@ def load_data(base_path):
     
     # Load schedules data
     schedules = {}
-    for i in range(6):  # 0-5 schedule files
+    for i in range(8):  # 0-5 schedule files
         file_path = f"{base_path}/schedules/schedules_{i}.json"
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -33,7 +33,7 @@ def load_data(base_path):
             
     # Load prices data
     prices = {}
-    for i in range(6):  # 0-5 price files
+    for i in range(8):  # 0-5 price files
         file_path = f"{base_path}/prices/prices_{i}.json"
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -41,7 +41,7 @@ def load_data(base_path):
             
     # Load amounts data
     amounts = {}
-    for i in range(6):  # 0-5 amounts files
+    for i in range(8):  # 0-7 amounts files
         file_path = f"{base_path}/amounts/amounts_{i}.json"
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -111,7 +111,7 @@ def calculate_daily_inventory(transactions, amounts):
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     
     num_weeks = len(amounts)
-    for week in range(6):  # Use actual number of weeks
+    for week in range(8):  # Use actual number of weeks
         # Get starting inventory for this week
         starting_inventory = amounts[week].copy()
         
