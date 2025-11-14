@@ -41,7 +41,8 @@ def compute_best_agents(houses, agents_dict, top_n=5):
         aid = h.get("agent_id")
         if not aid:
             continue
-        rec = per_agent.setdefault(aid, {"sum_days": 0.0, "sum_price": 0.0, "count": 0})
+        rec = per_agent.setdefault(
+            aid, {"sum_days": 0.0, "sum_price": 0.0, "count": 0})
         rec["sum_days"] += float(h.get("days_on_marked", 0.0))
         rec["sum_price"] += float(h.get("price", 0.0))
         rec["count"] += 1
@@ -103,6 +104,7 @@ def compute_data_quality(houses):
         "missing_district_id": missing_district,
     }
 
+
 def _build_feature_vector(year: int, remodeled: int, color: str, month_str: str) -> np.ndarray:
     """Construct a single feature vector matching `build_dataset` layout.
 
@@ -132,7 +134,8 @@ def _build_feature_vector(year: int, remodeled: int, color: str, month_str: str)
     set_feat("year", float(year))
 
     # Remodel features
-    years_since_remodel = float(year) - float(remodeled) if remodeled > 0 else 0.0
+    years_since_remodel = float(
+        year) - float(remodeled) if remodeled > 0 else 0.0
     set_feat("years_since_remodel", years_since_remodel)
     set_feat("remodeled_flag", 1.0 if remodeled > 0 else 0.0)
 
@@ -216,7 +219,6 @@ def _predict_sale_probability(year: int, remodeled: int, color: str, month_str: 
 
 
 app = dash.Dash(__name__)
-app = dash.Dash(__name__)
 
 app.layout = html.Div([
     html.H3("KKD - Real Estate Dashboard"),
@@ -225,11 +227,13 @@ app.layout = html.Div([
         dcc.Tab(label="Price Prediction", value="tab-price", children=[
             html.Div([
                 html.H4("Year built:"),
-                dcc.Input(id="year", value="1990", type="number"),
+                dcc.Input(id="year", value="1990",
+                          type="number", debounce=True),
             ]),
             html.Div([
                 html.H4("Remodeled year (0 if never):"),
-                dcc.Input(id="remodeled", value="2015", type="number"),
+                dcc.Input(id="remodeled", value="2015",
+                          type="number", debounce=True),
             ]),
             html.Div([
                 html.H4("Color:"),
@@ -264,6 +268,7 @@ app.layout = html.Div([
     ]),
 ])
 
+
 @app.callback(
     Output("output-price", "children"),
     Input("year", "value"),
@@ -288,6 +293,7 @@ def predict_price(year, remodeled, house_color, month_to_marked):
         f"{price:,.0f} NOK\n"
         f"Probability sold within {int(CLS_THRESHOLD_DAYS)} days: {prob * 100:.1f}%"
     )
+
 
 @app.callback(
     Output("best-agents", "children"),
@@ -330,17 +336,6 @@ def update_analysis_tab(active_tab):
 
     return best_agents_text, ad_text, quality_text
 
+
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
-
-
-    
-
-
-
-
-
