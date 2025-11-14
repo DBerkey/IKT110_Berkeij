@@ -21,6 +21,11 @@ MEAN = _artifacts["mean"]
 STD = _artifacts["std"]
 FEATURE_NAMES = _artifacts["feature_names"]
 
+# Optional classification model for sale probability
+CLS_W = _artifacts.get("cls_weights")
+CLS_B = _artifacts.get("cls_bias")
+CLS_THRESHOLD_DAYS = _artifacts.get("cls_threshold_days", 30.0)
+
 
 def load_raw_data_for_analysis():
     houses = load_jsonl(f"{DATA_DIR}/houses.jsonl")
@@ -194,6 +199,22 @@ def _predict_price(year: int, remodeled: int, color: str, month_str: str) -> flo
     return float(np.exp(y_log))
 
 
+def _predict_sale_probability(year: int, remodeled: int, color: str, month_str: str):
+    """Predict probability that the house is sold within CLS_THRESHOLD_DAYS.
+
+    Returns None if the classification model is not available in artifacts.
+    """
+
+    if CLS_W is None or CLS_B is None:
+        return None
+
+    x = _build_feature_vector(year, remodeled, color, month_str)
+    x_scaled = (x - MEAN) / STD
+    logit = float(x_scaled @ CLS_W + CLS_B)
+    prob = 1.0 / (1.0 + np.exp(-logit))
+    return prob
+
+
 app = dash.Dash(__name__)
 app = dash.Dash(__name__)
 
@@ -258,7 +279,15 @@ def predict_price(year, remodeled, house_color, month_to_marked):
         return "Please enter valid numeric years."
 
     price = _predict_price(y, ry, house_color, month_to_marked)
-    return f"{price:,.0f} NOK"
+    prob = _predict_sale_probability(y, ry, house_color, month_to_marked)
+
+    if prob is None:
+        return f"{price:,.0f} NOK"
+
+    return (
+        f"{price:,.0f} NOK\n"
+        f"Probability sold within {int(CLS_THRESHOLD_DAYS)} days: {prob * 100:.1f}%"
+    )
 
 @app.callback(
     Output("best-agents", "children"),

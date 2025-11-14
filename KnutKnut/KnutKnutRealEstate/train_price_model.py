@@ -6,6 +6,7 @@ import numpy as np
 
 from data_loader import build_dataset
 from linear_model import LinearRegressionSGD
+from logistic_model import LogisticRegressionSGD
 
 
 def standardize_train(X: np.ndarray):
@@ -79,6 +80,50 @@ def train_price_model():
     for i in range(5):
         print(f"True: {y_true[i]:,.0f}, Pred: {y_pred[i]:,.0f}")
 
+    # --- Train logistic model for sale-within-X-days probability ---
+    # We already have X with NaNs; reuse it so indices match feature_names
+    threshold_days = 30.0
+
+    # We don't have access to raw houses list here easily, so we approximate
+    # labels using the scaled train/test indices and the days_on_marked feature
+    # which is included in X.
+    try:
+        days_idx = feature_names.index("days_on_marked")
+        sold_flag_idx = feature_names.index("sold_flag")
+    except ValueError:
+        days_idx = None
+        sold_flag_idx = None
+
+    if (days_idx is not None) and (sold_flag_idx is not None):
+        # Recreate labels: y_cls = 1 if sold and days_on_marked <= threshold
+        # We don't have the original 'sold' column here, but we encoded
+        # sold_flag as a numeric feature.
+        sold_flag = X[:, sold_flag_idx]
+        days = X[:, days_idx]
+        y_cls = ((sold_flag > 0.5) & (days <= threshold_days)).astype(float)
+
+        # Use same scaling statistics and impute NaNs as for training
+        X_full = np.asarray(X, dtype=float)
+        inds_full = np.where(np.isnan(X_full))
+        if inds_full[0].size > 0:
+            X_full[inds_full] = np.take(mean, inds_full[1])
+        X_full_scaled = (X_full - mean) / std_safe
+
+        clf = LogisticRegressionSGD(
+            n_features=X_full_scaled.shape[1],
+            learning_rate=1e-3,
+            l2=1e-4,
+            batch_size=32,
+            shuffle=True,
+            random_state=0,
+        )
+        clf.fit(X_full_scaled, y_cls, n_epochs=50)
+        cls_w, cls_b = clf.parameters()
+    else:
+        cls_w = np.zeros_like(model.w)
+        cls_b = 0.0
+        threshold_days = 30.0
+
     # Save model and preprocessing metadata for dashboard use
     artifacts = {
         "weights": model.w,
@@ -86,12 +131,15 @@ def train_price_model():
         "mean": mean,
         "std": std_safe,
         "feature_names": feature_names,
+        "cls_weights": cls_w,
+        "cls_bias": cls_b,
+        "cls_threshold_days": threshold_days,
     }
 
     out_path = Path(__file__).with_name("price_model.pkl")
     with out_path.open("wb") as f:
         pickle.dump(artifacts, f)
-    print(f"Saved model artifacts to {out_path}")
+    print(f"Saved model artifacts (regression + classification) to {out_path}")
 
 if __name__ == "__main__":
     train_price_model()
