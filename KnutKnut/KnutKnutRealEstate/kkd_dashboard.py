@@ -103,7 +103,22 @@ def compute_data_quality(houses):
         "missing_district_id": missing_district,
     }
 
-def _build_feature_vector(year: int, remodeled: int, color: str, month_str: str) -> np.ndarray:
+def _build_feature_vector(
+    year: int,
+    remodeled: int,
+    color: str,
+    month_str: str,
+    size: float,
+    bathrooms: float,
+    kitchens: float,
+    external_storage_m2: float,
+    lot_w: float,
+    storage_rating: float,
+    sun_factor: float,
+    condition_rating: float,
+    days_on_marked: float,
+    rooms_count: float,
+) -> np.ndarray:
     """Construct a single feature vector matching `build_dataset` layout.
 
     For simplicity this uses sensible defaults for fields not exposed in the UI
@@ -119,16 +134,16 @@ def _build_feature_vector(year: int, remodeled: int, color: str, month_str: str)
             idx = FEATURE_NAMES.index(name)
             x[idx] = value
 
-    # Basic numeric defaults
-    set_feat("size", 80.0)
-    set_feat("bathrooms", 1.0)
-    set_feat("kitchens", 1.0)
-    set_feat("external_storage_m2", 5.0)
-    set_feat("lot_w", 20.0)
-    set_feat("storage_rating", 5.0)
-    set_feat("sun_factor", 0.6)
-    set_feat("condition_rating", 6.0)
-    set_feat("days_on_marked", 10.0)
+    # Basic numeric features from UI
+    set_feat("size", float(size))
+    set_feat("bathrooms", float(bathrooms))
+    set_feat("kitchens", float(kitchens))
+    set_feat("external_storage_m2", float(external_storage_m2))
+    set_feat("lot_w", float(lot_w))
+    set_feat("storage_rating", float(storage_rating))
+    set_feat("sun_factor", float(sun_factor))
+    set_feat("condition_rating", float(condition_rating))
+    set_feat("days_on_marked", float(days_on_marked))
     set_feat("year", float(year))
 
     # Remodel features
@@ -144,7 +159,7 @@ def _build_feature_vector(year: int, remodeled: int, color: str, month_str: str)
     set_feat("school_capacity", 50.0)
 
     # Rooms
-    set_feat("rooms_count", 3.0)
+    set_feat("rooms_count", float(rooms_count))
 
     # Sold flag: we assume we want price for a house that will sell
     set_feat("sold_flag", 1.0)
@@ -191,15 +206,60 @@ def _build_feature_vector(year: int, remodeled: int, color: str, month_str: str)
     return x
 
 
-def _predict_price(year: int, remodeled: int, color: str, month_str: str) -> float:
-    x = _build_feature_vector(year, remodeled, color, month_str)
+def _predict_price(
+    year: int,
+    remodeled: int,
+    color: str,
+    month_str: str,
+    size: float,
+    bathrooms: float,
+    kitchens: float,
+    external_storage_m2: float,
+    lot_w: float,
+    storage_rating: float,
+    sun_factor: float,
+    condition_rating: float,
+    days_on_marked: float,
+    rooms_count: float,
+) -> float:
+    x = _build_feature_vector(
+        year,
+        remodeled,
+        color,
+        month_str,
+        size,
+        bathrooms,
+        kitchens,
+        external_storage_m2,
+        lot_w,
+        storage_rating,
+        sun_factor,
+        condition_rating,
+        days_on_marked,
+        rooms_count,
+    )
     # Scale
     x_scaled = (x - MEAN) / STD
     y_log = float(x_scaled @ W + B)
     return float(np.exp(y_log))
 
 
-def _predict_sale_probability(year: int, remodeled: int, color: str, month_str: str):
+def _predict_sale_probability(
+    year: int,
+    remodeled: int,
+    color: str,
+    month_str: str,
+    size: float,
+    bathrooms: float,
+    kitchens: float,
+    external_storage_m2: float,
+    lot_w: float,
+    storage_rating: float,
+    sun_factor: float,
+    condition_rating: float,
+    days_on_marked: float,
+    rooms_count: float,
+):
     """Predict probability that the house is sold within CLS_THRESHOLD_DAYS.
 
     Returns None if the classification model is not available in artifacts.
@@ -208,7 +268,22 @@ def _predict_sale_probability(year: int, remodeled: int, color: str, month_str: 
     if CLS_W is None or CLS_B is None:
         return None
 
-    x = _build_feature_vector(year, remodeled, color, month_str)
+    x = _build_feature_vector(
+        year,
+        remodeled,
+        color,
+        month_str,
+        size,
+        bathrooms,
+        kitchens,
+        external_storage_m2,
+        lot_w,
+        storage_rating,
+        sun_factor,
+        condition_rating,
+        days_on_marked,
+        rooms_count,
+    )
     x_scaled = (x - MEAN) / STD
     logit = float(x_scaled @ CLS_W + CLS_B)
     prob = 1.0 / (1.0 + np.exp(-logit))
@@ -240,6 +315,46 @@ app.layout = html.Div([
                 ),
             ]),
             html.Div([
+                html.H4("Size (m²):"),
+                dcc.Input(id="size", value="80", type="number"),
+            ]),
+            html.Div([
+                html.H4("Bathrooms:"),
+                dcc.Input(id="bathrooms", value="1", type="number"),
+            ]),
+            html.Div([
+                html.H4("Kitchens:"),
+                dcc.Input(id="kitchens", value="1", type="number"),
+            ]),
+            html.Div([
+                html.H4("External storage (m²):"),
+                dcc.Input(id="external_storage_m2", value="5", type="number"),
+            ]),
+            html.Div([
+                html.H4("Lot width:"),
+                dcc.Input(id="lot_w", value="20", type="number"),
+            ]),
+            html.Div([
+                html.H4("Storage rating (1-10):"),
+                dcc.Input(id="storage_rating", value="5", type="number"),
+            ]),
+            html.Div([
+                html.H4("Sun factor (0-1):"),
+                dcc.Input(id="sun_factor", value="0.6", type="number"),
+            ]),
+            html.Div([
+                html.H4("Condition rating (1-10):"),
+                dcc.Input(id="condition_rating", value="6", type="number"),
+            ]),
+            html.Div([
+                html.H4("Days on market (for scenario):"),
+                dcc.Input(id="days_on_marked", value="10", type="number"),
+            ]),
+            html.Div([
+                html.H4("Rooms (count):"),
+                dcc.Input(id="rooms_count", value="3", type="number"),
+            ]),
+            html.Div([
                 html.H4("Put to market in:"),
                 dcc.Dropdown(
                     ["jan", "feb", "march", "april", "november"],
@@ -269,17 +384,86 @@ app.layout = html.Div([
     Input("year", "value"),
     Input("remodeled", "value"),
     Input("color", "value"),
+    Input("size", "value"),
+    Input("bathrooms", "value"),
+    Input("kitchens", "value"),
+    Input("external_storage_m2", "value"),
+    Input("lot_w", "value"),
+    Input("storage_rating", "value"),
+    Input("sun_factor", "value"),
+    Input("condition_rating", "value"),
+    Input("days_on_marked", "value"),
+    Input("rooms_count", "value"),
     Input("month-to-marked", "value"),
 )
-def predict_price(year, remodeled, house_color, month_to_marked):
+def predict_price(
+    year,
+    remodeled,
+    house_color,
+    size,
+    bathrooms,
+    kitchens,
+    external_storage_m2,
+    lot_w,
+    storage_rating,
+    sun_factor,
+    condition_rating,
+    days_on_marked,
+    rooms_count,
+    month_to_marked,
+):
     try:
         y = int(year)
         ry = int(remodeled)
     except (TypeError, ValueError):
         return "Please enter valid numeric years."
 
-    price = _predict_price(y, ry, house_color, month_to_marked)
-    prob = _predict_sale_probability(y, ry, house_color, month_to_marked)
+    try:
+        size_f = float(size)
+        bath_f = float(bathrooms)
+        kit_f = float(kitchens)
+        ext_f = float(external_storage_m2)
+        lot_f = float(lot_w)
+        stor_f = float(storage_rating)
+        sun_f = float(sun_factor)
+        cond_f = float(condition_rating)
+        days_f = float(days_on_marked)
+        rooms_f = float(rooms_count)
+    except (TypeError, ValueError):
+        return "Please enter valid numeric values for all house features."
+
+    price = _predict_price(
+        y,
+        ry,
+        house_color,
+        month_to_marked,
+        size_f,
+        bath_f,
+        kit_f,
+        ext_f,
+        lot_f,
+        stor_f,
+        sun_f,
+        cond_f,
+        days_f,
+        rooms_f,
+    )
+    prob = _predict_sale_probability(
+        y,
+        ry,
+        house_color,
+        month_to_marked,
+        size_f,
+        bath_f,
+        kit_f,
+        ext_f,
+        lot_f,
+        stor_f,
+        sun_f,
+        cond_f,
+        days_f,
+        rooms_f,
+    )
 
     if prob is None:
         return f"{price:,.0f} NOK"
