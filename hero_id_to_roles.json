@@ -1,0 +1,742 @@
+{
+    "1": [
+        "Carry",
+        "Escape",
+        "Nuker"
+    ],
+    "2": [
+        "Initiator",
+        "Durable",
+        "Disabler",
+        "Carry"
+    ],
+    "3": [
+        "Support",
+        "Disabler",
+        "Nuker",
+        "Durable"
+    ],
+    "4": [
+        "Carry",
+        "Disabler",
+        "Nuker",
+        "Initiator"
+    ],
+    "5": [
+        "Support",
+        "Disabler",
+        "Nuker"
+    ],
+    "6": [
+        "Carry",
+        "Disabler",
+        "Pusher"
+    ],
+    "7": [
+        "Support",
+        "Initiator",
+        "Disabler",
+        "Nuker"
+    ],
+    "8": [
+        "Carry",
+        "Pusher",
+        "Escape"
+    ],
+    "9": [
+        "Carry",
+        "Support",
+        "Escape",
+        "Nuker",
+        "Disabler"
+    ],
+    "10": [
+        "Carry",
+        "Escape",
+        "Durable",
+        "Nuker",
+        "Disabler"
+    ],
+    "11": [
+        "Carry",
+        "Nuker"
+    ],
+    "12": [
+        "Carry",
+        "Escape",
+        "Pusher",
+        "Nuker"
+    ],
+    "13": [
+        "Initiator",
+        "Disabler",
+        "Escape",
+        "Nuker"
+    ],
+    "14": [
+        "Disabler",
+        "Initiator",
+        "Durable",
+        "Nuker"
+    ],
+    "15": [
+        "Carry",
+        "Durable",
+        "Nuker",
+        "Pusher"
+    ],
+    "16": [
+        "Initiator",
+        "Disabler",
+        "Support",
+        "Nuker",
+        "Escape"
+    ],
+    "17": [
+        "Carry",
+        "Escape",
+        "Nuker",
+        "Initiator",
+        "Disabler"
+    ],
+    "18": [
+        "Carry",
+        "Disabler",
+        "Initiator",
+        "Durable",
+        "Nuker"
+    ],
+    "19": [
+        "Carry",
+        "Nuker",
+        "Pusher",
+        "Initiator",
+        "Durable",
+        "Disabler"
+    ],
+    "20": [
+        "Support",
+        "Initiator",
+        "Disabler",
+        "Nuker",
+        "Escape"
+    ],
+    "21": [
+        "Carry",
+        "Support",
+        "Disabler",
+        "Escape",
+        "Nuker"
+    ],
+    "22": [
+        "Nuker",
+        "Carry"
+    ],
+    "23": [
+        "Carry",
+        "Support",
+        "Disabler",
+        "Initiator",
+        "Durable",
+        "Nuker"
+    ],
+    "25": [
+        "Support",
+        "Carry",
+        "Nuker",
+        "Disabler"
+    ],
+    "26": [
+        "Support",
+        "Disabler",
+        "Nuker",
+        "Initiator"
+    ],
+    "27": [
+        "Support",
+        "Pusher",
+        "Disabler",
+        "Nuker",
+        "Initiator"
+    ],
+    "28": [
+        "Carry",
+        "Durable",
+        "Initiator",
+        "Disabler",
+        "Escape"
+    ],
+    "29": [
+        "Initiator",
+        "Durable",
+        "Disabler",
+        "Nuker",
+        "Carry"
+    ],
+    "30": [
+        "Support",
+        "Nuker",
+        "Disabler"
+    ],
+    "31": [
+        "Support",
+        "Nuker"
+    ],
+    "32": [
+        "Carry",
+        "Escape",
+        "Disabler"
+    ],
+    "33": [
+        "Disabler",
+        "Initiator",
+        "Pusher"
+    ],
+    "34": [
+        "Carry",
+        "Nuker",
+        "Pusher"
+    ],
+    "35": [
+        "Carry",
+        "Nuker"
+    ],
+    "36": [
+        "Carry",
+        "Nuker",
+        "Durable",
+        "Disabler"
+    ],
+    "37": [
+        "Support",
+        "Initiator",
+        "Disabler"
+    ],
+    "38": [
+        "Initiator",
+        "Disabler",
+        "Durable",
+        "Nuker"
+    ],
+    "39": [
+        "Carry",
+        "Nuker",
+        "Escape"
+    ],
+    "40": [
+        "Support",
+        "Nuker",
+        "Initiator",
+        "Pusher",
+        "Disabler"
+    ],
+    "41": [
+        "Carry",
+        "Initiator",
+        "Disabler",
+        "Escape",
+        "Durable"
+    ],
+    "42": [
+        "Carry",
+        "Support",
+        "Durable",
+        "Disabler",
+        "Initiator"
+    ],
+    "43": [
+        "Carry",
+        "Pusher",
+        "Nuker",
+        "Disabler"
+    ],
+    "44": [
+        "Carry",
+        "Escape"
+    ],
+    "45": [
+        "Nuker",
+        "Pusher"
+    ],
+    "46": [
+        "Carry",
+        "Escape"
+    ],
+    "47": [
+        "Carry",
+        "Durable",
+        "Initiator",
+        "Disabler"
+    ],
+    "48": [
+        "Carry",
+        "Nuker",
+        "Pusher"
+    ],
+    "49": [
+        "Carry",
+        "Pusher",
+        "Durable",
+        "Disabler",
+        "Initiator",
+        "Nuker"
+    ],
+    "50": [
+        "Support",
+        "Nuker",
+        "Disabler"
+    ],
+    "51": [
+        "Initiator",
+        "Disabler",
+        "Durable",
+        "Nuker"
+    ],
+    "52": [
+        "Carry",
+        "Support",
+        "Nuker",
+        "Pusher",
+        "Disabler"
+    ],
+    "53": [
+        "Carry",
+        "Pusher",
+        "Escape",
+        "Nuker"
+    ],
+    "54": [
+        "Carry",
+        "Durable",
+        "Escape",
+        "Disabler"
+    ],
+    "55": [
+        "Initiator",
+        "Escape",
+        "Disabler"
+    ],
+    "56": [
+        "Carry",
+        "Escape",
+        "Pusher"
+    ],
+    "57": [
+        "Support",
+        "Durable",
+        "Nuker"
+    ],
+    "58": [
+        "Support",
+        "Pusher",
+        "Durable",
+        "Disabler"
+    ],
+    "59": [
+        "Carry",
+        "Durable",
+        "Initiator"
+    ],
+    "60": [
+        "Carry",
+        "Initiator",
+        "Durable",
+        "Disabler",
+        "Nuker"
+    ],
+    "61": [
+        "Carry",
+        "Pusher",
+        "Escape",
+        "Nuker"
+    ],
+    "62": [
+        "Escape",
+        "Nuker"
+    ],
+    "63": [
+        "Carry",
+        "Escape"
+    ],
+    "64": [
+        "Support",
+        "Nuker",
+        "Pusher",
+        "Disabler"
+    ],
+    "65": [
+        "Initiator",
+        "Disabler",
+        "Escape"
+    ],
+    "66": [
+        "Support",
+        "Pusher"
+    ],
+    "67": [
+        "Carry",
+        "Durable",
+        "Escape"
+    ],
+    "68": [
+        "Support",
+        "Disabler",
+        "Nuker"
+    ],
+    "69": [
+        "Carry",
+        "Disabler",
+        "Initiator",
+        "Durable",
+        "Nuker"
+    ],
+    "70": [
+        "Carry",
+        "Durable",
+        "Disabler"
+    ],
+    "71": [
+        "Carry",
+        "Initiator",
+        "Disabler",
+        "Durable",
+        "Escape"
+    ],
+    "72": [
+        "Carry",
+        "Nuker",
+        "Disabler"
+    ],
+    "73": [
+        "Carry",
+        "Support",
+        "Durable",
+        "Disabler",
+        "Initiator",
+        "Nuker"
+    ],
+    "74": [
+        "Carry",
+        "Nuker",
+        "Disabler",
+        "Escape",
+        "Pusher"
+    ],
+    "75": [
+        "Carry",
+        "Support",
+        "Disabler",
+        "Initiator",
+        "Nuker"
+    ],
+    "76": [
+        "Carry",
+        "Nuker",
+        "Disabler"
+    ],
+    "77": [
+        "Carry",
+        "Pusher",
+        "Durable",
+        "Escape"
+    ],
+    "78": [
+        "Carry",
+        "Initiator",
+        "Durable",
+        "Disabler",
+        "Nuker"
+    ],
+    "79": [
+        "Support",
+        "Disabler",
+        "Initiator",
+        "Nuker"
+    ],
+    "80": [
+        "Carry",
+        "Pusher",
+        "Durable"
+    ],
+    "81": [
+        "Carry",
+        "Disabler",
+        "Durable",
+        "Pusher",
+        "Initiator"
+    ],
+    "82": [
+        "Carry",
+        "Escape",
+        "Nuker",
+        "Disabler",
+        "Initiator",
+        "Pusher"
+    ],
+    "83": [
+        "Support",
+        "Initiator",
+        "Durable",
+        "Disabler",
+        "Escape"
+    ],
+    "84": [
+        "Support",
+        "Nuker",
+        "Disabler",
+        "Durable",
+        "Initiator"
+    ],
+    "85": [
+        "Support",
+        "Durable",
+        "Disabler",
+        "Nuker"
+    ],
+    "86": [
+        "Support",
+        "Disabler",
+        "Nuker"
+    ],
+    "87": [
+        "Support",
+        "Disabler",
+        "Nuker",
+        "Initiator"
+    ],
+    "88": [
+        "Disabler",
+        "Nuker",
+        "Initiator",
+        "Escape"
+    ],
+    "89": [
+        "Carry",
+        "Support",
+        "Pusher",
+        "Disabler",
+        "Initiator",
+        "Escape"
+    ],
+    "90": [
+        "Support",
+        "Nuker",
+        "Disabler"
+    ],
+    "91": [
+        "Support",
+        "Escape",
+        "Nuker"
+    ],
+    "92": [
+        "Support",
+        "Nuker",
+        "Durable",
+        "Disabler",
+        "Pusher"
+    ],
+    "93": [
+        "Carry",
+        "Escape",
+        "Disabler",
+        "Nuker"
+    ],
+    "94": [
+        "Carry",
+        "Disabler",
+        "Durable"
+    ],
+    "95": [
+        "Carry",
+        "Pusher",
+        "Disabler",
+        "Durable"
+    ],
+    "96": [
+        "Durable",
+        "Initiator",
+        "Disabler",
+        "Nuker",
+        "Escape"
+    ],
+    "97": [
+        "Initiator",
+        "Disabler",
+        "Nuker",
+        "Escape"
+    ],
+    "98": [
+        "Nuker",
+        "Durable",
+        "Escape"
+    ],
+    "99": [
+        "Carry",
+        "Durable",
+        "Initiator",
+        "Nuker"
+    ],
+    "100": [
+        "Initiator",
+        "Disabler",
+        "Nuker"
+    ],
+    "101": [
+        "Support",
+        "Nuker",
+        "Disabler"
+    ],
+    "102": [
+        "Support",
+        "Carry",
+        "Durable"
+    ],
+    "103": [
+        "Initiator",
+        "Disabler",
+        "Nuker",
+        "Durable"
+    ],
+    "104": [
+        "Carry",
+        "Disabler",
+        "Initiator",
+        "Durable",
+        "Nuker"
+    ],
+    "105": [
+        "Nuker",
+        "Disabler"
+    ],
+    "106": [
+        "Carry",
+        "Escape",
+        "Nuker",
+        "Disabler",
+        "Initiator"
+    ],
+    "107": [
+        "Nuker",
+        "Escape",
+        "Disabler",
+        "Initiator",
+        "Durable"
+    ],
+    "108": [
+        "Support",
+        "Nuker",
+        "Disabler",
+        "Durable",
+        "Escape"
+    ],
+    "109": [
+        "Carry",
+        "Pusher",
+        "Nuker"
+    ],
+    "110": [
+        "Support",
+        "Nuker",
+        "Initiator",
+        "Escape",
+        "Disabler"
+    ],
+    "111": [
+        "Support",
+        "Nuker",
+        "Disabler",
+        "Escape"
+    ],
+    "112": [
+        "Support",
+        "Disabler",
+        "Nuker"
+    ],
+    "113": [
+        "Carry",
+        "Escape",
+        "Nuker"
+    ],
+    "114": [
+        "Carry",
+        "Escape",
+        "Disabler",
+        "Initiator"
+    ],
+    "119": [
+        "Support",
+        "Nuker",
+        "Disabler",
+        "Escape"
+    ],
+    "120": [
+        "Carry",
+        "Nuker",
+        "Disabler",
+        "Durable",
+        "Escape",
+        "Initiator"
+    ],
+    "121": [
+        "Support",
+        "Nuker",
+        "Disabler",
+        "Escape"
+    ],
+    "123": [
+        "Support",
+        "Nuker",
+        "Escape",
+        "Disabler"
+    ],
+    "126": [
+        "Carry",
+        "Escape",
+        "Nuker",
+        "Disabler"
+    ],
+    "128": [
+        "Support",
+        "Nuker",
+        "Disabler",
+        "Escape"
+    ],
+    "129": [
+        "Carry",
+        "Initiator",
+        "Disabler",
+        "Durable"
+    ],
+    "131": [
+        "Support",
+        "Nuker",
+        "Escape",
+        "Disabler"
+    ],
+    "135": [
+        "Carry",
+        "Durable"
+    ],
+    "136": [
+        "Support",
+        "Carry",
+        "Initiator",
+        "Disabler",
+        "Escape"
+    ],
+    "137": [
+        "Initiator",
+        "Durable",
+        "Disabler"
+    ],
+    "138": [
+        "Carry",
+        "Nuker",
+        "Disabler"
+    ],
+    "145": [
+        "Carry",
+        "Escape",
+        "Disabler"
+    ]
+}
