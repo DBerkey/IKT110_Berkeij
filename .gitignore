@@ -211,3 +211,7 @@ logs/
 TESTING_GUIDE.md
 test_multi_agents.py
 analysis_output/
+
+# csv
+*.csv
+*.zip
