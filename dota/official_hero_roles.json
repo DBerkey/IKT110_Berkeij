@@ -1,0 +1,731 @@
+{
+  "Alchemist": [
+    "Carry",
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Axe": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Bristleback": [
+    "Carry",
+    "Nuker",
+    "Durable",
+    "Initiator"
+  ],
+  "Chaos Knight": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Pusher",
+    "Initiator"
+  ],
+  "Dawnbreaker": [
+    "Carry",
+    "Durable"
+  ],
+  "Doom": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Dragon Knight": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Pusher",
+    "Initiator"
+  ],
+  "Ember Spirit": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Huskar": [
+    "Carry",
+    "Durable",
+    "Initiator"
+  ],
+  "Kunkka": [
+    "Carry",
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Legion Commander": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Lifestealer": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Escape"
+  ],
+  "Mars": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Night Stalker": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Slardar": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Escape",
+    "Initiator"
+  ],
+  "Spirit Breaker": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Escape",
+    "Initiator"
+  ],
+  "Sven": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Tidehunter": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Tiny": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Pusher",
+    "Initiator"
+  ],
+  "Wraith King": [
+    "Carry",
+    "Support",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Anti-Mage": [
+    "Carry",
+    "Nuker",
+    "Escape"
+  ],
+  "Arc Warden": [
+    "Carry",
+    "Nuker",
+    "Escape"
+  ],
+  "Bloodseeker": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Initiator"
+  ],
+  "Clinkz": [
+    "Carry",
+    "Escape",
+    "Pusher"
+  ],
+  "Drow Ranger": [
+    "Carry",
+    "Disabler",
+    "Pusher"
+  ],
+  "Faceless Void": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Escape",
+    "Initiator"
+  ],
+  "Gyrocopter": [
+    "Carry",
+    "Nuker",
+    "Disabler"
+  ],
+  "Juggernaut": [
+    "Carry",
+    "Escape",
+    "Pusher"
+  ],
+  "Lone Druid": [
+    "Carry",
+    "Durable",
+    "Pusher"
+  ],
+  "Luna": [
+    "Carry",
+    "Nuker",
+    "Pusher"
+  ],
+  "Medusa": [
+    "Carry",
+    "Disabler",
+    "Durable"
+  ],
+  "Meepo": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Pusher",
+    "Initiator"
+  ],
+  "Monkey King": [
+    "Carry",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Morphling": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Escape"
+  ],
+  "Naga Siren": [
+    "Carry",
+    "Support",
+    "Disabler",
+    "Escape",
+    "Pusher",
+    "Initiator"
+  ],
+  "Phantom Assassin": [
+    "Carry",
+    "Escape"
+  ],
+  "Phantom Lancer": [
+    "Carry",
+    "Nuker",
+    "Escape",
+    "Pusher"
+  ],
+  "Razor": [
+    "Carry",
+    "Nuker",
+    "Durable",
+    "Pusher"
+  ],
+  "Riki": [
+    "Carry",
+    "Disabler",
+    "Escape"
+  ],
+  "Shadow Fiend": [
+    "Carry",
+    "Nuker"
+  ],
+  "Slark": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Sniper": [
+    "Carry",
+    "Nuker"
+  ],
+  "Spectre": [
+    "Carry",
+    "Durable",
+    "Escape"
+  ],
+  "Templar Assassin": [
+    "Carry",
+    "Escape"
+  ],
+  "Terrorblade": [
+    "Carry",
+    "Nuker",
+    "Pusher"
+  ],
+  "Troll Warlord": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Pusher"
+  ],
+  "Ursa": [
+    "Carry",
+    "Disabler",
+    "Durable"
+  ],
+  "Viper": [
+    "Carry",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Weaver": [
+    "Carry",
+    "Escape"
+  ],
+  "Death Prophet": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Pusher"
+  ],
+  "Leshrac": [
+    "Carry",
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Pusher"
+  ],
+  "Lina": [
+    "Carry",
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Muerta": [
+    "Carry",
+    "Nuker",
+    "Disabler"
+  ],
+  "Nature's Prophet": [
+    "Carry",
+    "Nuker",
+    "Escape",
+    "Pusher"
+  ],
+  "Necrophos": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable"
+  ],
+  "Outworld Destroyer": [
+    "Carry",
+    "Nuker",
+    "Disabler"
+  ],
+  "Queen of Pain": [
+    "Carry",
+    "Nuker",
+    "Escape"
+  ],
+  "Silencer": [
+    "Carry",
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Initiator"
+  ],
+  "Storm Spirit": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Tinker": [
+    "Carry",
+    "Nuker",
+    "Pusher"
+  ],
+  "Zeus": [
+    "Carry",
+    "Nuker"
+  ],
+  "Abaddon": [
+    "Carry",
+    "Support",
+    "Durable"
+  ],
+  "Brewmaster": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Broodmother": [
+    "Carry",
+    "Nuker",
+    "Escape",
+    "Pusher"
+  ],
+  "Invoker": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Pusher"
+  ],
+  "Lycan": [
+    "Carry",
+    "Durable",
+    "Escape",
+    "Pusher"
+  ],
+  "Marci": [
+    "Carry",
+    "Support",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Mirana": [
+    "Carry",
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Pangolier": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Escape",
+    "Initiator"
+  ],
+  "Void Spirit": [
+    "Carry",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Windranger": [
+    "Carry",
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Earthshaker": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Initiator"
+  ],
+  "Ogre Magi": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Omniknight": [
+    "Support",
+    "Nuker",
+    "Durable"
+  ],
+  "Treant Protector": [
+    "Support",
+    "Disabler",
+    "Durable",
+    "Escape",
+    "Initiator"
+  ],
+  "Underlord": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Escape"
+  ],
+  "Undying": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Durable"
+  ],
+  "Hoodwink": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Ancient Apparition": [
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Crystal Maiden": [
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Disruptor": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Initiator"
+  ],
+  "Enchantress": [
+    "Support",
+    "Disabler",
+    "Durable",
+    "Pusher"
+  ],
+  "Grimstroke": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Jakiro": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Pusher"
+  ],
+  "Keeper of the Light": [
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Lich": [
+    "Support",
+    "Nuker"
+  ],
+  "Lion": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Initiator"
+  ],
+  "Oracle": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Rubick": [
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Shadow Demon": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Initiator"
+  ],
+  "Shadow Shaman": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Pusher",
+    "Initiator"
+  ],
+  "Skywrath Mage": [
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Warlock": [
+    "Support",
+    "Disabler",
+    "Initiator"
+  ],
+  "Witch Doctor": [
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Bane": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Durable"
+  ],
+  "Chen": [
+    "Support",
+    "Pusher"
+  ],
+  "Dark Willow": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Dazzle": [
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Io": [
+    "Support",
+    "Nuker",
+    "Escape"
+  ],
+  "Phoenix": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Sand King": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Snapfire": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape"
+  ],
+  "Vengeful Spirit": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Venomancer": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Pusher",
+    "Initiator"
+  ],
+  "Visage": [
+    "Support",
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Pusher"
+  ],
+  "Winter Wyvern": [
+    "Support",
+    "Nuker",
+    "Disabler"
+  ],
+  "Centaur Warrunner": [
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Escape",
+    "Initiator"
+  ],
+  "Earth Spirit": [
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Escape",
+    "Initiator"
+  ],
+  "Elder Titan": [
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Pudge": [
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Tusk": [
+    "Nuker",
+    "Disabler",
+    "Initiator"
+  ],
+  "Bounty Hunter": [
+    "Nuker",
+    "Escape"
+  ],
+  "Puck": [
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Pugna": [
+    "Nuker",
+    "Pusher"
+  ],
+  "Beastmaster": [
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Clockwerk": [
+    "Nuker",
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Magnus": [
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Nyx Assassin": [
+    "Nuker",
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Techies": [
+    "Nuker",
+    "Disabler"
+  ],
+  "Timbersaw": [
+    "Nuker",
+    "Durable",
+    "Escape"
+  ],
+  "Primal Beast": [
+    "Disabler",
+    "Durable",
+    "Initiator"
+  ],
+  "Batrider": [
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Dark Seer": [
+    "Disabler",
+    "Escape",
+    "Initiator"
+  ],
+  "Enigma": [
+    "Disabler",
+    "Pusher",
+    "Initiator"
+  ]
+}
