@@ -8,7 +8,7 @@ to run use & C:/Users/berke/anaconda3/envs/IKT110/python.exe -m dota.dotaWinPred
 
 from typing import List, Tuple
 import numpy as np
-# Support importing when running as a package or as a script: try absolute first, fall back to relative.
+import random
 from .dataLoader import load_data
 from .logistic_model import LogisticRegressionSGD
 
@@ -46,11 +46,15 @@ class DotaWinPredictor:
             y.append(winner)
         return np.array(X), np.array(y)
     
-    def split_dataset(self, matches: List[Tuple[List[int], List[int], str]], train_ratio: float = 0.8) -> Tuple[List[Tuple[List[int], List[int], str]], List[Tuple[List[int], List[int], str]]]:
-        """Splits the dataset into training and testing sets."""
-        n_train = int(len(matches) * train_ratio)
-        train_matches = matches[:n_train]
-        test_matches = matches[n_train:]
+    def split_dataset(self, matches: List[Tuple[List[int], List[int], str]], train_ratio: float = 0.8, random_state: int | None = 0) -> Tuple[List[Tuple[List[int], List[int], str]], List[Tuple[List[int], List[int], str]]]:
+        """Splits the dataset into training and testing sets with shuffling."""
+        rng = random.Random(random_state)
+        matches_shuffled = matches.copy()
+        rng.shuffle(matches_shuffled)
+
+        n_train = int(len(matches_shuffled) * train_ratio)
+        train_matches = matches_shuffled[:n_train]
+        test_matches = matches_shuffled[n_train:]
         return train_matches, test_matches
 
     def train(self, matches: List[Tuple[List[int], List[int], int]], n_epochs: int = 100) -> None:
@@ -72,7 +76,11 @@ class DotaWinPredictor:
         fp = np.sum((preds == 1) & (y == 0))
         fn = np.sum((preds == 0) & (y == 1))
         confusion_matrix = np.array([[tp, fp], [fn, tn]])
-        return accuracy, confusion_matrix
+        # F1 score and recall
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+        return accuracy, confusion_matrix, f1, recall
 
     def save_model(self, filepath: str) -> None:
         """Saves the model parameters to a file."""
@@ -95,14 +103,41 @@ if __name__ == "__main__":
     playerCSV = "C:\\Users\\berke\\Documents\\UiA\\IKT110_Berkeij\\dota\\new_ranked_players.csv"
     matches, n_heroes = load_data(matchCSV, playerCSV)
 
-    predictor = DotaWinPredictor(n_heroes=n_heroes)
-    train_matches, test_matches = predictor.split_dataset(matches, train_ratio=0.8)
-    predictor.train(train_matches, n_epochs=100)
-    accuracy, confusion_matrix = predictor.test(test_matches)
-    print(f"Test accuracy: {accuracy:.2f}")
-    print("Confusion Matrix:")
-    print(confusion_matrix)
+    learning_rates = [1e-3, 1e-2, 1e-1]
+    l2_values = [0.0]
+    epoch_values = [10, 20, 50]
 
-    print("================================")
-    predictor.save_model("dota_win_predictor_model.npz")
-    print("Model trained and saved.")    
+    best_acc = 0.0
+    best_params: Tuple[float, float, int] | None = None
+
+    for lr in learning_rates:
+        for l2 in l2_values:
+            for n_epochs in epoch_values:
+                predictor = DotaWinPredictor(n_heroes=n_heroes)
+                predictor.model.learning_rate = lr
+                predictor.model.l2 = l2
+
+                train_matches, test_matches = predictor.split_dataset(matches, train_ratio=0.8, random_state=0)
+                predictor.train(train_matches, n_epochs=n_epochs)
+                accuracy, _, _, _ = predictor.test(test_matches)
+                print(f"lr={lr}, l2={l2}, epochs={n_epochs} -> accuracy={accuracy:.4f}")
+
+                if accuracy > best_acc:
+                    best_acc = accuracy
+                    best_params = (lr, l2, n_epochs)
+
+    if best_params is not None:
+        print("================================")
+        accuracy, confusion_matrix, f1, recall = predictor.test(test_matches)
+        print(f"Best params: lr={best_params[0]}, l2={best_params[1]}, epochs={best_params[2]} with accuracy={best_acc:.4f}")
+        print(f"Confusion Matrix:\n{confusion_matrix}")
+        print(f"F1 Score: {f1:.4f}")
+        print(f"Recall: {recall:.4f}")
+
+
+        final_predictor = DotaWinPredictor(n_heroes=n_heroes)
+        final_predictor.model.learning_rate = best_params[0]
+        final_predictor.model.l2 = best_params[1]
+        final_predictor.train(matches, n_epochs=best_params[2])
+        final_predictor.save_model("dota_win_predictor_model.npz")
+        print("Final model trained on full data with best hyperparameters and saved.")
