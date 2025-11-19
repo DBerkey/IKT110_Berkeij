@@ -6,19 +6,38 @@ Performs offline analysis on the cleaned ranked match data.
 Data is loaded from the CSV files produced by `readData.py`.
 """
 
+import json
 import pandas as pd
 from itertools import combinations
 
 
 MATCHES_CSV = "C:/Users/berke/Documents/UiA/IKT110_Berkeij/dota/new_ranked_matches.csv"
 PLAYERS_CSV = "C:/Users/berke/Documents/UiA/IKT110_Berkeij/dota/new_ranked_players.csv"
+HERO_METADATA_JSON = "C:/Users/berke/Documents/UiA/IKT110_Berkeij/dota/hero_id_to_name.json"
 COUNTER_LOOKUP_CSV = "C:/Users/berke/Documents/UiA/IKT110_Berkeij/dota/hero_counter_lookup.csv"
+SYNERGY_LOOKUP_CSV = "C:/Users/berke/Documents/UiA/IKT110_Berkeij/dota/hero_synergy_lookup.csv"
 
 
 def load_data():
 	matches_df = pd.read_csv(MATCHES_CSV)
 	players_df = pd.read_csv(PLAYERS_CSV)
 	return matches_df, players_df
+
+
+def load_hero_roles(metadata_path: str) -> tuple[dict[int, set[str]], list[str]]:
+	with open(metadata_path, "r", encoding="utf-8") as f:
+		data = json.load(f)
+
+	hero_roles: dict[int, set[str]] = {}
+	role_universe: set[str] = set()
+	for hero_id_str, payload in data.items():
+		hero_id = int(hero_id_str)
+		roles = payload[1] if isinstance(payload, list) and len(payload) > 1 else []
+		role_set = set(roles)
+		hero_roles[hero_id] = role_set
+		role_universe.update(role_set)
+
+	return hero_roles, sorted(role_universe)
 
 
 def most_picked_hero(players_df: pd.DataFrame):
@@ -90,23 +109,22 @@ def hero_game_lengths(matches_df: pd.DataFrame, players_df: pd.DataFrame, min_ga
 	)
 
 
-def best_hero_pairs(players_df: pd.DataFrame, min_pair_games: int = 100):
-	pair_stats = {}
+def hero_pair_stats(players_df: pd.DataFrame) -> pd.DataFrame:
+	pair_stats: dict[tuple[int, int], dict[str, int]] = {}
 
-	for match_id, group in players_df.groupby("match_id"):
-		for is_radiant, team_group in group.groupby("is_radiant"):
+	for _, group in players_df.groupby("match_id"):
+		for _, team_group in group.groupby("is_radiant"):
 			heroes = list(team_group["hero_id"])
 			win = bool(team_group["win"].iloc[0])
 
 			for h1, h2 in combinations(sorted(heroes), 2):
 				key = (h1, h2)
-				if key not in pair_stats:
-					pair_stats[key] = {"games": 0, "wins": 0}
-				pair_stats[key]["games"] += 1
+				stats = pair_stats.setdefault(key, {"games": 0, "wins": 0})
+				stats["games"] += 1
 				if win:
-					pair_stats[key]["wins"] += 1
+					stats["wins"] += 1
 
-	pairs_df = pd.DataFrame(
+	return pd.DataFrame(
 		[
 			{
 				"hero1": k[0],
@@ -118,6 +136,9 @@ def best_hero_pairs(players_df: pd.DataFrame, min_pair_games: int = 100):
 		]
 	)
 
+
+def best_hero_pairs(players_df: pd.DataFrame, min_pair_games: int = 100):
+	pairs_df = hero_pair_stats(players_df)
 	eligible_pairs = pairs_df[pairs_df["games"] >= min_pair_games]
 	return eligible_pairs.sort_values("winrate", ascending=False)
 
@@ -254,8 +275,82 @@ def counter_lookup_table(counters_df: pd.DataFrame) -> pd.DataFrame:
 	return lookup
 
 
+def synergy_lookup_table(
+	players_df: pd.DataFrame,
+	counters_df: pd.DataFrame,
+	hero_roles: dict[int, set[str]],
+	top_counter_k: int = 3,
+	min_pair_games: int = 50,
+	win_weight: float = 0.6,
+	role_weight: float = 0.2,
+	counter_weight: float = 0.2,
+) -> pd.DataFrame:
+	"""Create hero synergy matrix combining win, role diversity, and counter overlap."""
+	pairs_df = hero_pair_stats(players_df)
+	pairs_df = pairs_df[pairs_df["games"] >= min_pair_games].copy()
+	if pairs_df.empty:
+		return pd.DataFrame()
+
+	pairs_df["win_score"] = (2.0 * (pairs_df["winrate"] - 0.5)).clip(-1.0, 1.0)
+
+	top_counters = (
+		counters_df
+		.sort_values(["hero", "counter_strength"], ascending=[True, False])
+		.groupby("hero")
+		.head(top_counter_k)
+		.groupby("hero")["opponent"]
+		.apply(set)
+		.to_dict()
+	)
+
+	def role_score(hero_a: int, hero_b: int) -> float:
+		roles_a = hero_roles.get(hero_a, set())
+		roles_b = hero_roles.get(hero_b, set())
+		if not roles_a and not roles_b:
+			return 0.0
+		union = roles_a | roles_b
+		if not union:
+			return 0.0
+		overlap = roles_a & roles_b
+		diversity = 1.0 - (len(overlap) / len(union))
+		return (diversity * 2.0) - 1.0
+
+	def counter_score(hero_a: int, hero_b: int) -> float:
+		counters_a = top_counters.get(hero_a, set())
+		counters_b = top_counters.get(hero_b, set())
+		if not counters_a and not counters_b:
+			return 0.0
+		shared = len(counters_a & counters_b)
+		score = 1.0 - (shared / max(1, top_counter_k))
+		return (score * 2.0) - 1.0
+
+	rows: list[dict[str, float]] = []
+	for _, row in pairs_df.iterrows():
+		h1 = int(row["hero1"])
+		h2 = int(row["hero2"])
+		win_score = float(row["win_score"])
+		roles_component = role_score(h1, h2)
+		counter_component = counter_score(h1, h2)
+		synergy = (
+			win_weight * win_score
+			+ role_weight * roles_component
+			+ counter_weight * counter_component
+		)
+		rows.append({"hero": h1, "ally": h2, "synergy": synergy})
+		rows.append({"hero": h2, "ally": h1, "synergy": synergy})
+
+	synergy_df = pd.DataFrame(rows)
+	lookup = (
+		synergy_df
+		.pivot(index="hero", columns="ally", values="synergy")
+		.fillna(0.0)
+	)
+	return lookup
+
+
 if __name__ == "__main__":
 	matches_df, players_df = load_data()
+	hero_roles, role_labels = load_hero_roles(HERO_METADATA_JSON)
 
 	# 2. Most picked hero
 	hero, picks = most_picked_hero(players_df)
@@ -310,5 +405,12 @@ if __name__ == "__main__":
 	print("\nHero counter lookup table preview:")
 	print(counter_lookup.head(5))
 	print(f"Saved full lookup table to {COUNTER_LOOKUP_CSV}")
+
+	# 13. Hero synergy lookup table
+	synergy_lookup = synergy_lookup_table(players_df, counters_df, hero_roles)
+	synergy_lookup.to_csv(SYNERGY_LOOKUP_CSV)
+	print("\nHero synergy lookup table preview:")
+	print(synergy_lookup.head(5))
+	print(f"Saved full lookup table to {SYNERGY_LOOKUP_CSV}")
 
 
