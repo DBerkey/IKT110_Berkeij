@@ -10,8 +10,9 @@ import pandas as pd
 from itertools import combinations
 
 
-MATCHES_CSV = "c:/Users/berke/Documents/UiA/IKT110_Data/new_ranked_matches.csv"
-PLAYERS_CSV = "c:/Users/berke/Documents/UiA/IKT110_Data/new_ranked_players.csv"
+MATCHES_CSV = "C:/Users/berke/Documents/UiA/IKT110_Berkeij/dota/new_ranked_matches.csv"
+PLAYERS_CSV = "C:/Users/berke/Documents/UiA/IKT110_Berkeij/dota/new_ranked_players.csv"
+COUNTER_LOOKUP_CSV = "C:/Users/berke/Documents/UiA/IKT110_Berkeij/dota/hero_counter_lookup.csv"
 
 
 def load_data():
@@ -239,6 +240,20 @@ def safe_first_picks(players_df: pd.DataFrame, counters_df: pd.DataFrame, min_ga
 	return summary.sort_values("score", ascending=False)
 
 
+def counter_lookup_table(counters_df: pd.DataFrame) -> pd.DataFrame:
+	"""Build hero-vs-hero lookup scored in the continuous range [-1, 1]."""
+	scored = counters_df.copy()
+	scored["score"] = 2.0 * (scored["winrate_vs_opponent"] - 0.5)
+	scored["score"] = scored["score"].clip(-1.0, 1.0)
+
+	lookup = (
+		scored
+		.pivot(index="hero", columns="opponent", values="score")
+		.fillna(0.0)
+	)
+	return lookup
+
+
 if __name__ == "__main__":
 	matches_df, players_df = load_data()
 
@@ -288,5 +303,12 @@ if __name__ == "__main__":
 	safe_picks = safe_first_picks(players_df, counters_df)
 	print("\nSafe first-pick candidates (top 5):")
 	print(safe_picks.head(5))
+
+	# 12. Hero counter lookup table (continuous -1..1)
+	counter_lookup = counter_lookup_table(counters_df)
+	counter_lookup.to_csv(COUNTER_LOOKUP_CSV)
+	print("\nHero counter lookup table preview:")
+	print(counter_lookup.head(5))
+	print(f"Saved full lookup table to {COUNTER_LOOKUP_CSV}")
 
 
