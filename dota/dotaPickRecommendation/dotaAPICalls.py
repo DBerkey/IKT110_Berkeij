@@ -1,6 +1,13 @@
-import requests
+"""
+Author: Urs Pfrommer & Douwe Berkeij
+Date: 18-11-2025
+Description: Dota 2 API Calls to fetch hero data and roles and save them as JSON files.
+"""
+
 import json
 import time
+import requests
+
 
 BASE_URL = "https://api.opendota.com/api"
 
@@ -26,9 +33,11 @@ def fetch_hero_data():
         return {}
     return {hero['id']: [hero['localized_name'], hero['roles']] for hero in heroes}
 
+
 def save_json(data, filename):
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+
 
 if __name__ == "__main__":
     hero_id_to_name = fetch_hero_data()
