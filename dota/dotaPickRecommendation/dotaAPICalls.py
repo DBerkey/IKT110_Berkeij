@@ -2,17 +2,29 @@ import requests
 import json
 import time
 
-def fetch_hero_data():
-    url = "https://api.opendota.com/api/heroes"
-    heroes = requests.get(url, timeout=100).json()
-    hero_id_to_name = {hero['id']: hero['localized_name'] for hero in heroes}
-    return hero_id_to_name
+BASE_URL = "https://api.opendota.com/api"
 
-def fetch_hero_roles():
-    url = "https://api.opendota.com/api/heroStats"
-    heroes_stats = requests.get(url, timeout=100).json()
-    hero_id_to_roles = {hero['id']: hero['roles'] for hero in heroes_stats}
-    return hero_id_to_roles
+def get_json(url, timeout=100):
+    try:
+        resp = requests.get(url, timeout=timeout)
+        resp.raise_for_status()  # raise for HTTP errors (4xx/5xx)
+        try:
+            return resp.json()
+        except ValueError:
+            print(f"Failed to decode JSON from {url}")
+            print("Response text (truncated):")
+            print(resp.text[:500])
+            return None
+    except requests.RequestException as e:
+        print(f"Request error for {url}: {e}")
+        return None
+
+def fetch_hero_data():
+    url = f"{BASE_URL}/heroes"
+    heroes = get_json(url)
+    if not heroes:
+        return {}
+    return {hero['id']: [hero['localized_name'], hero['roles']] for hero in heroes}
 
 def save_json(data, filename):
     with open(filename, 'w', encoding='utf-8') as f:
@@ -20,7 +32,7 @@ def save_json(data, filename):
 
 if __name__ == "__main__":
     hero_id_to_name = fetch_hero_data()
-    save_json(hero_id_to_name, "hero_id_to_name.json")
-    time.sleep(1)
-    hero_id_to_roles = fetch_hero_roles()
-    save_json(hero_id_to_roles, "hero_id_to_roles.json")
+    if not hero_id_to_name:
+        print("Could not fetch hero names; exiting.")
+    else:
+        save_json(hero_id_to_name, "hero_id_to_name.json")
