@@ -586,7 +586,7 @@ app.layout = html.Div(
                                                                             className="col-12 col-md-6 col-lg-3",
                                                                             children=[
                                                                                 html.Label(
-                                                                                    "Days on market (scenario)", className="form-label"),
+                                                                                    "Days on market", className="form-label"),
                                                                                 dcc.Input(
                                                                                     id="days_on_marked",
                                                                                     value="10",
