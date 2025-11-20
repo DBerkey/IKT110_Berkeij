@@ -1,0 +1,141 @@
+:root {
+    --kkd-brand: #0d6efd;
+    --kkd-muted: #6c757d;
+    --kkd-bg: #eef2f7;
+    --kkd-card: #ffffff;
+}
+
+body {
+    background-color: var(--kkd-bg);
+    font-family: "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #212529;
+}
+
+.app-shell {
+    background: linear-gradient(180deg, #f5f7fb 0%, #eef2f7 60%, #e7ecf3 100%);
+    min-height: 100vh;
+}
+
+.hero {
+    background: radial-gradient(circle at top left, rgba(13, 110, 253, 0.15), transparent 60%);
+}
+
+.hero-subtitle {
+    color: var(--kkd-muted);
+    max-width: 640px;
+}
+
+.hero-tags .badge {
+    font-weight: 500;
+    padding: 0.4rem 0.9rem;
+}
+
+.text-bg-primary-soft {
+    color: var(--kkd-brand);
+    background-color: rgba(13, 110, 253, 0.15);
+}
+
+.tabs-wrapper {
+    border-radius: 1rem;
+}
+
+.tab-btn {
+    font-weight: 500;
+    padding: 0.9rem 1.2rem;
+}
+
+.tab-btn--active {
+    background-color: rgba(13, 110, 253, 0.08) !important;
+    border-bottom: 3px solid var(--kkd-brand) !important;
+    font-weight: 600;
+}
+
+.input-section .card-header {
+    border-bottom: none;
+}
+
+.section-title {
+    font-weight: 600;
+    margin-top: 0.35rem;
+}
+
+.primary-highlight {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(35, 138, 255, 0.16));
+    border-radius: 1rem;
+}
+
+.primary-highlight .display-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--kkd-brand);
+    margin-bottom: 0.5rem;
+}
+
+.tips-card {
+    border-radius: 1rem;
+}
+
+.tips-list {
+    padding-left: 1.1rem;
+    margin-bottom: 0;
+    color: var(--kkd-muted);
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.analysis-card .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.preserve-whitespace {
+    white-space: pre-wrap;
+    font-family: "Fira Code", "SFMono-Regular", Consolas, monospace;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.dash-dropdown .Select__control {
+    border-radius: 0.75rem;
+    border-color: #ced4da;
+    min-height: 48px;
+    box-shadow: none;
+}
+
+.dash-dropdown .Select__control--is-focused {
+    border-color: var(--kkd-brand);
+    box-shadow: 0 0 0 0.18rem rgba(13, 110, 253, 0.2);
+}
+
+.dash-dropdown .Select__placeholder,
+.dash-dropdown .Select__single-value {
+    color: #212529;
+    font-weight: 500;
+}
+
+.form-control {
+    border-radius: 0.75rem;
+    min-height: 48px;
+}
+
+.form-control:focus {
+    border-color: var(--kkd-brand);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+@media (max-width: 575.98px) {
+    .hero-subtitle {
+        font-size: 0.95rem;
+    }
+
+    .tabs-wrapper {
+        border-radius: 0.75rem;
+    }
+
+    .form-control,
+    .dash-dropdown .Select__control {
+        min-height: 44px;
+    }
+}

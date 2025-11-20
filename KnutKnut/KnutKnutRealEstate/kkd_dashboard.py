@@ -9,6 +9,8 @@ from dash.dependencies import Input, Output
 
 from data_loader import load_jsonl, DATA_DIR
 
+THEME_URL = "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/litera/bootstrap.min.css"
+
 
 # Load trained price model artifacts
 ARTIFACTS_PATH = Path(__file__).with_name("price_model.pkl")
@@ -293,101 +295,466 @@ def _predict_sale_probability(
     return prob
 
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, external_stylesheets=[THEME_URL])
+app.title = "KKD - Real Estate Dashboard"
 
-app.layout = html.Div([
-    html.H3("KKD - Real Estate Dashboard"),
-
-    dcc.Tabs(id="tabs", value="tab-price", children=[
-        dcc.Tab(label="Price Prediction", value="tab-price", children=[
-            html.Div([
-                html.H4("Year built:"),
-                dcc.Input(id="year", value="1990",
-                          type="number", min=1900, max=2025),
-            ]),
-            html.Div([
-                html.H4("Remodeled year (0 if never):"),
-                dcc.Input(id="remodeled", value="2015",
-                          type="number", min=0, max=2025),
-            ]),
-            html.Div([
-                html.H4("Color:"),
-                dcc.Dropdown(
-                    ["blue", "red", "white", "gray", "green", "black"],
-                    "blue",
-                    id="color",
+app.layout = html.Div(
+    className="app-shell",
+    children=[
+        html.Div(
+            className="container py-4",
+            children=[
+                html.Div(
+                    className="hero card border-0 shadow-sm mb-4",
+                    children=[
+                        html.Div(
+                            className="card-body d-flex flex-column flex-md-row align-items-md-center gap-4",
+                            children=[
+                                html.Div(
+                                    children=[
+                                        html.H3("KKD - Real Estate Dashboard",
+                                                className="fw-semibold mb-1"),
+                                    ],
+                                ),
+                            ],
+                        )
+                    ],
                 ),
-            ]),
-            html.Div([
-                html.H4("Size (m²):"),
-                dcc.Input(id="size", value="80", type="number", min=0),
-            ]),
-            html.Div([
-                html.H4("Bathrooms:"),
-                dcc.Input(id="bathrooms", value="1", type="number", min=0),
-            ]),
-            html.Div([
-                html.H4("Kitchens:"),
-                dcc.Input(id="kitchens", value="1", type="number", min=0),
-            ]),
-            html.Div([
-                html.H4("External storage (m²):"),
-                dcc.Input(id="external_storage_m2",
-                          value="5", type="number", min=0),
-            ]),
-            html.Div([
-                html.H4("Lot width:"),
-                dcc.Input(id="lot_w", value="20", type="number", min=0),
-            ]),
-            html.Div([
-                html.H4("Storage rating (1-10):"),
-                dcc.Input(id="storage_rating", value="5",
-                          type="number", min=1, max=10),
-            ]),
-            html.Div([
-                html.H4("Sun factor (0-1):"),
-                dcc.Input(id="sun_factor", value="0.6",
-                          type="number", min=0, max=1),
-            ]),
-            html.Div([
-                html.H4("Condition rating (1-10):"),
-                dcc.Input(id="condition_rating", value="6",
-                          type="number", min=1, max=10),
-            ]),
-            html.Div([
-                html.H4("Days on market (for scenario):"),
-                dcc.Input(id="days_on_marked", value="10",
-                          type="number", min=0),
-            ]),
-            html.Div([
-                html.H4("Rooms (count):"),
-                dcc.Input(id="rooms_count", value="3", type="number", min=0),
-            ]),
-            html.Div([
-                html.H4("Put to market in:"),
-                dcc.Dropdown(
-                    ["jan", "feb", "march", "april", "may", "june", "july",
-                        "august", "september", "october", "november", "december"],
-                    "november",
-                    id="month-to-marked",
+                dcc.Tabs(
+                    id="tabs",
+                    value="tab-price",
+                    className="tabs-wrapper card border-0 shadow-sm overflow-hidden mb-4",
+                    colors={
+                        "border": "#dee2e6",
+                        "primary": "#0d6efd",
+                        "background": "#f8f9fa",
+                    },
+                    children=[
+                        dcc.Tab(
+                            label="Price Prediction",
+                            value="tab-price",
+                            className="tab-btn",
+                            selected_className="tab-btn--active",
+                            children=[
+                                html.Div(
+                                    className="row g-4 align-items-start",
+                                    children=[
+                                        html.Div(
+                                            className="col-12 col-xl-8",
+                                            children=[
+                                                html.Div(
+                                                    className="input-section card border-0 shadow-sm mb-4",
+                                                    children=[
+                                                        html.Div(
+                                                            className="card-header bg-transparent pb-0",
+                                                            children=[
+                                                                html.Small(
+                                                                    "Step 1", className="text-uppercase text-muted"),
+                                                                html.H5(
+                                                                    "Property basics", className="section-title"),
+                                                            ],
+                                                        ),
+                                                        html.Div(
+                                                            className="card-body",
+                                                            children=[
+                                                                html.Div(
+                                                                    className="row g-3",
+                                                                    children=[
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Year built", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="year",
+                                                                                    value="1990",
+                                                                                    type="number",
+                                                                                    min=1900,
+                                                                                    max=2025,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Remodeled year (0 if never)", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="remodeled",
+                                                                                    value="2015",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    max=2025,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Color", className="form-label"),
+                                                                                dcc.Dropdown(
+                                                                                    ["blue", "red", "white", "gray", "green", "black"],
+                                                                                    "blue",
+                                                                                    id="color",
+                                                                                    clearable=False,
+                                                                                    className="dash-dropdown",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Size (m²)", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="size",
+                                                                                    value="80",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Rooms (count)", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="rooms_count",
+                                                                                    value="3",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Bathrooms", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="bathrooms",
+                                                                                    value="1",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Kitchens", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="kitchens",
+                                                                                    value="1",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                    ],
+                                                                )
+                                                            ],
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    className="input-section card border-0 shadow-sm mb-4",
+                                                    children=[
+                                                        html.Div(
+                                                            className="card-header bg-transparent pb-0",
+                                                            children=[
+                                                                html.Small(
+                                                                    "Step 2", className="text-uppercase text-muted"),
+                                                                html.H5(
+                                                                    "Lot & storage", className="section-title"),
+                                                            ],
+                                                        ),
+                                                        html.Div(
+                                                            className="card-body",
+                                                            children=[
+                                                                html.Div(
+                                                                    className="row g-3",
+                                                                    children=[
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "External storage (m²)", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="external_storage_m2",
+                                                                                    value="5",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Lot width", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="lot_w",
+                                                                                    value="20",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-4",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Storage rating (1-10)", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="storage_rating",
+                                                                                    value="5",
+                                                                                    type="number",
+                                                                                    min=1,
+                                                                                    max=10,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                    ],
+                                                                )
+                                                            ],
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    className="input-section card border-0 shadow-sm",
+                                                    children=[
+                                                        html.Div(
+                                                            className="card-header bg-transparent pb-0",
+                                                            children=[
+                                                                html.Small(
+                                                                    "Step 3", className="text-uppercase text-muted"),
+                                                                html.H5(
+                                                                    "Condition & timing", className="section-title"),
+                                                            ],
+                                                        ),
+                                                        html.Div(
+                                                            className="card-body",
+                                                            children=[
+                                                                html.Div(
+                                                                    className="row g-3",
+                                                                    children=[
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-3",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Sun factor (0-1)", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="sun_factor",
+                                                                                    value="0.6",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    max=1,
+                                                                                    step=0.1,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-3",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Condition rating (1-10)", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="condition_rating",
+                                                                                    value="6",
+                                                                                    type="number",
+                                                                                    min=1,
+                                                                                    max=10,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-3",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Days on market (scenario)", className="form-label"),
+                                                                                dcc.Input(
+                                                                                    id="days_on_marked",
+                                                                                    value="10",
+                                                                                    type="number",
+                                                                                    min=0,
+                                                                                    className="form-control",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                        html.Div(
+                                                                            className="col-12 col-md-6 col-lg-3",
+                                                                            children=[
+                                                                                html.Label(
+                                                                                    "Put to market in", className="form-label"),
+                                                                                dcc.Dropdown(
+                                                                                    ["jan", "feb", "march", "april", "may", "june", "july",
+                                                                                     "august", "september", "october", "november", "december"],
+                                                                                    "november",
+                                                                                    id="month-to-marked",
+                                                                                    clearable=False,
+                                                                                    className="dash-dropdown",
+                                                                                ),
+                                                                            ],
+                                                                        ),
+                                                                    ],
+                                                                )
+                                                            ],
+                                                        ),
+                                                    ],
+                                                ),
+                                            ],
+                                        ),
+                                        html.Div(
+                                            className="col-12 col-xl-4",
+                                            children=[
+                                                html.Div(
+                                                    className="card primary-highlight border-0 shadow-sm mb-4",
+                                                    children=[
+                                                        html.Div(
+                                                            className="card-body",
+                                                            children=[
+                                                                html.Small(
+                                                                    "Scenario result", className="text-uppercase text-muted"),
+                                                                html.H4(
+                                                                    "Predicted price", className="mb-3"),
+                                                                html.Pre(
+                                                                    id="output-price",
+                                                                    className="display-value preserve-whitespace",
+                                                                ),
+                                                                html.P(
+                                                                    "Adjust the sliders on the left to see how renovation timing or size impacts the estimate.",
+                                                                    className="text-muted small",
+                                                                ),
+                                                            ],
+                                                        )
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    className="card tips-card border-0 shadow-sm",
+                                                    children=[
+                                                        html.Div(
+                                                            className="card-body",
+                                                            children=[
+                                                                html.H6(
+                                                                    "Quick tips", className="mb-3"),
+                                                                html.Ul(
+                                                                    className="tips-list",
+                                                                    children=[
+                                                                        html.Li(
+                                                                            "Start with verified fields (year, size) for reliable scaling."),
+                                                                        html.Li(
+                                                                            "Tweak condition + market timing to stress-test pricing windows."),
+                                                                        html.Li(
+                                                                            "Compare ad packages under the Data Analysis tab before publishing."),
+                                                                    ],
+                                                                ),
+                                                            ],
+                                                        )
+                                                    ],
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                )
+                            ],
+                        ),
+                        dcc.Tab(
+                            label="Data Analysis",
+                            value="tab-analysis",
+                            className="tab-btn",
+                            selected_className="tab-btn--active",
+                            children=[
+                                html.Div(
+                                    className="row g-4",
+                                    children=[
+                                        html.Div(
+                                            className="col-12 col-lg-4",
+                                            children=[
+                                                html.Div(
+                                                    className="analysis-card card border-0 shadow-sm h-100",
+                                                    children=[
+                                                        html.Div(
+                                                            className="card-body",
+                                                            children=[
+                                                                html.H5(
+                                                                    "Best Agents (by days on market)", className="card-title"),
+                                                                html.Pre(
+                                                                    id="best-agents",
+                                                                    className="mb-0 text-muted preserve-whitespace",
+                                                                ),
+                                                            ],
+                                                        )
+                                                    ],
+                                                )
+                                            ],
+                                        ),
+                                        html.Div(
+                                            className="col-12 col-lg-4",
+                                            children=[
+                                                html.Div(
+                                                    className="analysis-card card border-0 shadow-sm h-100",
+                                                    children=[
+                                                        html.Div(
+                                                            className="card-body",
+                                                            children=[
+                                                                html.H5(
+                                                                    "Ad Package Pricing", className="card-title"),
+                                                                html.Pre(
+                                                                    id="ad-packages",
+                                                                    className="mb-0 text-muted preserve-whitespace",
+                                                                ),
+                                                            ],
+                                                        )
+                                                    ],
+                                                )
+                                            ],
+                                        ),
+                                        html.Div(
+                                            className="col-12 col-lg-4",
+                                            children=[
+                                                html.Div(
+                                                    className="analysis-card card border-0 shadow-sm h-100",
+                                                    children=[
+                                                        html.Div(
+                                                            className="card-body",
+                                                            children=[
+                                                                html.H5(
+                                                                    "Data Quality / Missing Data", className="card-title"),
+                                                                html.Pre(
+                                                                    id="data-quality",
+                                                                    className="mb-0 text-muted preserve-whitespace",
+                                                                ),
+                                                            ],
+                                                        )
+                                                    ],
+                                                )
+                                            ],
+                                        ),
+                                    ],
+                                )
+                            ],
+                        ),
+                    ],
                 ),
-            ]),
-            html.H4("Predicted Price:"),
-            html.Div([html.Pre(id="output-price")]),
-        ]),
-
-        dcc.Tab(label="Data Analysis", value="tab-analysis", children=[
-            html.H4("Best Agents (by days on market)"),
-            html.Pre(id="best-agents"),
-
-            html.H4("Ad Package Pricing (average sale price)"),
-            html.Pre(id="ad-packages"),
-
-            html.H4("Data Quality / Missing Data"),
-            html.Pre(id="data-quality"),
-        ]),
-    ]),
-])
+            ],
+        )
+    ],
+)
 
 
 @app.callback(
