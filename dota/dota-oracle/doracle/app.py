@@ -12,8 +12,6 @@ from flask import Flask, render_template, request, jsonify, g, redirect, url_for
 from functools import lru_cache
 
 # The ML model files
-from doracle.model import HeroStats
-
 # Make sure the project root (which contains the training code) is importable.
 package_directory = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.abspath(os.path.join(package_directory, "..", "..", ".."))
@@ -135,25 +133,32 @@ def suggest3():
 
 @app.route("/stats/<int:heroid>", methods=["GET"])
 def get_hero_stats(heroid):
-
-    hero_model = get_hero_stat_model()
-    win_rate = hero_model.get_winrate(heroid)
-    pick_rate = hero_model.get_pickrate(heroid)
-    best_paired_with = hero_model.get_best_paired_with_hero(heroid)
-
     hero_lookup = get_hero_lookup()
-    hero_name = hero_lookup.get(heroid, {}).get("name", f"Hero {heroid}")
-    best_paired_with_name = hero_lookup.get(best_paired_with, {}).get("name", f"Hero {best_paired_with}")
+    hero = hero_lookup.get(heroid)
+    if hero is None:
+        return jsonify({"error": f"Unknown hero id {heroid}"}), 404
 
+    safe_pick_stats = _get_safe_pick_stats()
+    safe_entry = safe_pick_stats.get(heroid, {})
+
+    top_pairs_payload = []
+    for partner_id, synergy_score in _top_synergy_partners(heroid, limit=3):
+        partner_entry = _hero_entry(partner_id)
+        partner_entry["synergy_score"] = round(float(synergy_score), 3)
+        partner_entry["image"] = url_for("static", filename=f"img/avatar-sb/{partner_id}.png")
+        top_pairs_payload.append(partner_entry)
+
+    win_rate_value = safe_entry.get("winrate")
     hero_stats = {
-        "todo": "please implement this feature instead of the random stats that are not used.",
-        "hero": hero_name,
-        "win_rate": win_rate,
-        "pick_rate": pick_rate,
-        "best_paired_with": best_paired_with_name
+        "hero_id": heroid,
+        "hero": hero.get("name", f"Hero {heroid}"),
+        "win_rate": win_rate_value,
+        "win_rate_percent": f"{win_rate_value * 100:.2f}%" if win_rate_value is not None else None,
+        "games_sampled": safe_entry.get("games"),
+        "safe_pick_score": safe_entry.get("score"),
+        "avg_counter_strength": safe_entry.get("avg_counter_strength"),
+        "best_pairs": top_pairs_payload,
     }
-
-    print("hero_stats:", hero_stats)
 
     return jsonify(hero_stats)
 
@@ -177,14 +182,6 @@ def get_hero_lookup():
     return lookup
 
 
-@lru_cache(maxsize=1)
-def get_hero_stat_model():
-    path_to_model = "/home/dota_oracle_user/models/herostat.pkl"
-
-    hero_stat_model = HeroStats.load(path_to_model)
-    return hero_stat_model
-
-
 def _get_pick_assets():
     global _pick_assets
     with _pick_assets_lock:
@@ -193,6 +190,46 @@ def _get_pick_assets():
             safe_first_picks = load_safe_first_picks(safe_first_picks_path)
             _pick_assets = (counter_matrix, synergy_matrix, safe_first_picks)
     return _pick_assets
+
+
+@lru_cache(maxsize=1)
+def _get_safe_pick_stats() -> dict[int, dict[str, float | int | None]]:
+    try:
+        with open(safe_first_picks_path, "r", encoding="utf-8") as fp:
+            raw_stats = json.load(fp)
+    except FileNotFoundError:
+        return {}
+
+    parsed: dict[int, dict[str, float | int | None]] = {}
+    for hero_id_str, payload in raw_stats.items():
+        try:
+            hero_id = int(hero_id_str)
+        except (TypeError, ValueError):
+            continue
+        parsed[hero_id] = {
+            "winrate": float(payload.get("winrate")) if payload.get("winrate") is not None else None,
+            "avg_counter_strength": float(payload.get("avg_counter_strength")) if payload.get("avg_counter_strength") is not None else None,
+            "score": float(payload.get("score")) if payload.get("score") is not None else None,
+        }
+    return parsed
+
+
+def _top_synergy_partners(hero_id: int, limit: int = 3) -> list[tuple[int, float]]:
+    if limit <= 0:
+        return []
+    _, synergy_matrix, _ = _get_pick_assets()
+    if synergy_matrix.size == 0 or hero_id >= synergy_matrix.shape[0]:
+        return []
+
+    row = synergy_matrix[hero_id]
+    candidates = []
+    for candidate_id, score in enumerate(row):
+        if candidate_id == hero_id:
+            continue
+        candidates.append((candidate_id, float(score)))
+
+    candidates.sort(key=lambda item: item[1], reverse=True)
+    return candidates[:limit]
 
 
 def _coerce_ids(values):
