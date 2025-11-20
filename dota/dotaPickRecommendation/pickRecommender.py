@@ -66,18 +66,21 @@ def recommend_picks(current_bans: list, current_side: str, current_radiant_picks
 
     recommended_indices = np.argsort(scores)[-top_k:][::-1]
 
-    for idx in recommended_indices:
-        if idx not in valid_heroes:
-            scores[idx] = -np.inf
+    if valid_heroes is not None:
+        valid_set = set(valid_heroes)
+        # Re-score invalid heroes so they drop out on the next sort pass.
+        for idx in recommended_indices:
+            if idx not in valid_set:
+                scores[idx] = -np.inf
+        recommended_indices = np.argsort(scores)[-top_k:][::-1]
 
-    recommended_heroes = [
-        idx for idx in recommended_indices]
-
+    recommended_heroes = [idx for idx in recommended_indices]
     return recommended_heroes[:top_k]
 
 
 def recommend_bans(current_bans: list, current_side: str, current_radiant_picks: list, current_dire_picks: list,
-                   counter_matrix: np.ndarray, synergy_matrix: np.ndarray, safe_first_picks: list[int], top_k: int = 5) -> list:
+                   counter_matrix: np.ndarray, synergy_matrix: np.ndarray, safe_first_picks: list[int],
+                   top_k: int = 5, valid_heroes: list | None = None) -> list:
     """Suggest heroes to ban for the specified side."""
     num_heroes = counter_matrix.shape[0]
     available = set(range(num_heroes)) - set(current_bans +
@@ -98,17 +101,30 @@ def recommend_bans(current_bans: list, current_side: str, current_radiant_picks:
         return fallback[:top_k]
 
     for hero_id in available:
-        # Favor heroes that synergize with the opposing team and counter our current picks.
-        synergy_scores = _collect_scores(
+        # Favor heroes that synergize with the opposing team and pressure our current lineup,
+        # while down-weighting options that would also mesh well with us (harder to punish if stolen).
+        enemy_synergy_scores = _collect_scores(
             synergy_matrix[hero_id], threaten_team) if synergy_matrix.size else []
+        our_synergy_scores = _collect_scores(
+            synergy_matrix[hero_id], target_opponents) if synergy_matrix.size else []
         counter_scores = _collect_scores(
             counter_matrix[hero_id], target_opponents) if counter_matrix.size else []
-        synergy_avg = _average(synergy_scores)
+
+        enemy_synergy_avg = _average(enemy_synergy_scores)
+        our_synergy_avg = _average(our_synergy_scores)
         counter_avg = _average(counter_scores)
-        # Heavier weight on counter pressure because bans typically remove hard counters.
-        scores[hero_id] = 0.6 * counter_avg + 0.4 * synergy_avg
+
+        # Slight bonus for enemy synergy, main weight on counter strength, and a penalty for synergy with us.
+        scores[hero_id] = (
+            0.55 * counter_avg
+            + 0.35 * enemy_synergy_avg
+            - 0.15 * our_synergy_avg
+        )
 
     ranked = [idx for idx in np.argsort(scores)[::-1] if idx in available]
+    if valid_heroes is not None:
+        valid_set = set(valid_heroes)
+        ranked = [idx for idx in ranked if idx in valid_set]
     return ranked[:top_k]
 
 
