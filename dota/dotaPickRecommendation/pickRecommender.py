@@ -4,8 +4,9 @@ Date: 18-11-2025
 Descrition: Pick recommendation for drafting tool
 """
 
-from .dataLoader import load_match_data, load_counter_synergy_data, load_safe_first_picks, load_list_of_valid_heroes
 from __future__ import annotations
+
+from .dataLoader import load_match_data, load_counter_synergy_data, load_safe_first_picks, load_list_of_valid_heroes
 import numpy as np
 
 
