@@ -8,6 +8,7 @@ import json
 import os
 import sys
 import logging
+import numpy as np
 from threading import Lock
 import requests as req
 from flask import Flask, render_template, request, jsonify, g, redirect, url_for, send_from_directory
@@ -195,11 +196,18 @@ def get_hero_lookup():
     return lookup
 
 
+@lru_cache(maxsize=1)
+def _valid_hero_ids() -> list[int]:
+    return sorted(get_hero_lookup().keys())
+
+
 def _get_pick_assets():
     global _pick_assets
     with _pick_assets_lock:
         if _pick_assets is None:
             counter_matrix, synergy_matrix = load_counter_synergy_data(counter_lookup_path, synergy_lookup_path)
+            counter_matrix = _reindex_lookup_matrix(counter_matrix, counter_lookup_path)
+            synergy_matrix = _reindex_lookup_matrix(synergy_matrix, synergy_lookup_path)
             safe_first_picks = load_safe_first_picks(safe_first_picks_path)
             _pick_assets = (counter_matrix, synergy_matrix, safe_first_picks)
     return _pick_assets
@@ -225,6 +233,58 @@ def _get_safe_pick_stats() -> dict[int, dict[str, float | int | None]]:
             "score": float(payload.get("score")) if payload.get("score") is not None else None,
         }
     return parsed
+
+
+def _reindex_lookup_matrix(matrix: np.ndarray, csv_path: str) -> np.ndarray:
+    """Aligns a lookup matrix so indices match actual hero IDs from the CSV."""
+    if matrix.size == 0:
+        return matrix
+
+    try:
+        with open(csv_path, newline='', encoding='utf-8') as fp:
+            reader = csv.reader(fp)
+            header = next(reader, None)
+            if not header:
+                return matrix
+
+            col_ids: list[int | None] = []
+            for value in header[1:]:
+                try:
+                    col_ids.append(int(value))
+                except (TypeError, ValueError):
+                    col_ids.append(None)
+
+            row_ids: list[int | None] = []
+            for row in reader:
+                if not row:
+                    continue
+                try:
+                    row_ids.append(int(row[0]))
+                except (TypeError, ValueError):
+                    row_ids.append(None)
+    except FileNotFoundError:
+        return matrix
+
+    usable_rows = min(len(row_ids), matrix.shape[0])
+    usable_cols = min(len(col_ids), matrix.shape[1])
+
+    max_row_id = max((rid for rid in row_ids if rid is not None), default=-1)
+    max_col_id = max((cid for cid in col_ids if cid is not None), default=-1)
+    max_id = max(max_row_id, max_col_id)
+    if max_id < 0:
+        return matrix
+
+    reindexed = np.zeros((max_id + 1, max_id + 1), dtype=matrix.dtype)
+    for row_idx in range(usable_rows):
+        hero_i = row_ids[row_idx]
+        if hero_i is None:
+            continue
+        for col_idx in range(usable_cols):
+            hero_j = col_ids[col_idx]
+            if hero_j is None:
+                continue
+            reindexed[hero_i, hero_j] = matrix[row_idx, col_idx]
+    return reindexed
 
 
 def _top_synergy_partners(hero_id: int, limit: int = 3) -> list[tuple[int, float]]:
@@ -440,6 +500,7 @@ def _get_recommendations(payload: dict, side: str) -> dict:
         synergy_matrix=synergy_matrix,
         safe_first_picks=safe_first,
         top_k=5,
+        valid_heroes=_valid_hero_ids(),
     )
     recommended_ids = [int(hero_id) for hero_id in recommended_ids]
 
@@ -468,6 +529,7 @@ def _get_ban_recommendations(payload: dict, side: str) -> dict:
         synergy_matrix=synergy_matrix,
         safe_first_picks=safe_first,
         top_k=5,
+        valid_heroes=_valid_hero_ids(),
     )
     recommended_ids = [int(hero_id) for hero_id in recommended_ids]
 
