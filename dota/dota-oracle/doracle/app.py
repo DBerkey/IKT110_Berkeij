@@ -38,7 +38,8 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
 
-frontend_port = 5000
+frontend_host = os.getenv("DORACLE_HOST", "127.0.0.1")
+frontend_port = int(os.getenv("DORACLE_PORT", "5000"))
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # TODO: Remove before prod
@@ -46,7 +47,7 @@ running_user = getpass.getuser()
 
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.jinja_env.auto_reload = True
-debug_mode = True
+debug_mode = os.getenv("DORACLE_DEBUG", "1") == "1"
 
 model_path = os.path.join(repo_root, "dota", "dota_win_predictor_model.npz")
 counter_lookup_path = os.path.join(repo_root, "dota", "hero_counter_lookup.csv")
@@ -503,5 +504,6 @@ def _get_ban_recommendations(payload: dict, side: str) -> dict:
 
 
 if __name__ == '__main__':
-    app.jinja_env.cache = {}
-    app.run(debug=debug_mode, host='127.0.0.1', port=frontend_port)
+    if debug_mode:
+        app.jinja_env.cache = {}
+    app.run(debug=debug_mode, host=frontend_host, port=frontend_port)
