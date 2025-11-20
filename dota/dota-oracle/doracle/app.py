@@ -2,10 +2,12 @@
 # Imports
 # ----------------------------------------------------------------------------#
 
+import csv
 import getpass
 import json
 import os
 import sys
+import logging
 from threading import Lock
 import requests as req
 from flask import Flask, render_template, request, jsonify, g, redirect, url_for, send_from_directory
@@ -29,6 +31,11 @@ from dota.dotaPickRecommendation.pickRecommender import (
 # ----------------------------------------------------------------------------#
 # Configs
 # ----------------------------------------------------------------------------#
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
 
 frontend_port = 5000
 app = Flask(__name__, static_folder='static', template_folder='templates')
@@ -141,11 +148,17 @@ def get_hero_stats(heroid):
     safe_pick_stats = _get_safe_pick_stats()
     safe_entry = safe_pick_stats.get(heroid, {})
 
+    logging.debug(f"Safe pick stats for hero {heroid}: {safe_entry}")
+    logging.debug(f"Hero data: {hero}")
+    logging.debug(f"Hero name: {hero.get('name')}")
+    logging.debug(_top_synergy_partners(heroid, limit=3))
+
     top_pairs_payload = []
     for partner_id, synergy_score in _top_synergy_partners(heroid, limit=3):
         partner_entry = _hero_entry(partner_id)
         partner_entry["synergy_score"] = round(float(synergy_score), 3)
         partner_entry["image"] = url_for("static", filename=f"img/avatar-sb/{partner_id}.png")
+        logging.debug(f"Partner entry: {partner_entry}")
         top_pairs_payload.append(partner_entry)
 
     win_rate_value = safe_entry.get("winrate")
@@ -218,18 +231,56 @@ def _top_synergy_partners(hero_id: int, limit: int = 3) -> list[tuple[int, float
     if limit <= 0:
         return []
     _, synergy_matrix, _ = _get_pick_assets()
-    if synergy_matrix.size == 0 or hero_id >= synergy_matrix.shape[0]:
+    if synergy_matrix.size == 0:
         return []
 
-    row = synergy_matrix[hero_id]
+    row_ids, col_ids, hero_to_row = _get_synergy_index_maps()
+    row_idx = hero_to_row.get(hero_id)
+    if row_idx is None or row_idx >= synergy_matrix.shape[0]:
+        return []
+
+    row = synergy_matrix[row_idx]
     candidates = []
-    for candidate_id, score in enumerate(row):
-        if candidate_id == hero_id:
+    for col_idx, score in enumerate(row):
+        partner_id = col_ids[col_idx] if col_idx < len(col_ids) else None
+        if partner_id is None or partner_id == hero_id:
             continue
-        candidates.append((candidate_id, float(score)))
+        candidates.append((partner_id, float(score)))
 
     candidates.sort(key=lambda item: item[1], reverse=True)
     return candidates[:limit]
+
+
+@lru_cache(maxsize=1)
+def _get_synergy_index_maps() -> tuple[list[int], list[int | None], dict[int, int]]:
+    """Map hero ids to their row/column indices using CSV headers."""
+    row_ids: list[int] = []
+    col_ids: list[int | None] = []
+    hero_to_row: dict[int, int] = {}
+
+    try:
+        with open(synergy_lookup_path, newline='', encoding='utf-8') as fp:
+            reader = csv.reader(fp)
+            header = next(reader, None)
+            if header:
+                for value in header[1:]:
+                    try:
+                        col_ids.append(int(value))
+                    except (TypeError, ValueError):
+                        col_ids.append(None)
+            for row in reader:
+                if not row:
+                    continue
+                try:
+                    hero_id = int(row[0])
+                except (TypeError, ValueError):
+                    continue
+                hero_to_row[hero_id] = len(row_ids)
+                row_ids.append(hero_id)
+    except FileNotFoundError:
+        return row_ids, col_ids, hero_to_row
+
+    return row_ids, col_ids, hero_to_row
 
 
 def _coerce_ids(values):
