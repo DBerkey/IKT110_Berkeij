@@ -82,40 +82,34 @@ $(document).ready(function () {
 
     let output_box = $("#outputOracle")
 
-    $("#suggestBtn1").click(function () {
+    function requestSuggestion(endpoint) {
         $.ajax({
             type: "POST",
-            url: "/suggest1",
+            url: endpoint,
             contentType: "application/json; charset=utf-8",
             data: JSON.stringify({
                 "radiant": radiant_pool,
-                "dire": dire_pool
+                "dire": dire_pool,
+                "bans": ban_pool
             }),
-            dataType: "json",
+            dataType: "html",
             success: function (data) {
-                let pretty_data = JSON.stringify(data, undefined, 4)
-                output_box.text(pretty_data)
-
+                output_box.html(data)
+            },
+            error: function (xhr) {
+                let response = xhr.responseJSON || {}
+                let message = response.error || "Unable to fetch recommendations."
+                output_box.text(message)
             }
-        });
+        })
+    }
+
+    $("#suggestBtn1").click(function () {
+        requestSuggestion("/suggest1")
     })
 
     $("#suggestBtn2").click(function () {
-        $.ajax({
-            type: "POST",
-            url: "/suggest2",
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify({
-                "radiant": radiant_pool,
-                "dire": dire_pool
-            }),
-            dataType: "json",
-            success: function (data) {
-                let pretty_data = JSON.stringify(data, undefined, 4)
-                output_box.text(pretty_data)
-
-            }
-        });
+        requestSuggestion("/suggest2")
     })
 
 

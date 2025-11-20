@@ -21,6 +21,11 @@ if repo_root not in sys.path:
     sys.path.append(repo_root)
 
 from dota.dotaWinPredition.winPredictor import DotaWinPredictor, load_lookup_matrix
+from dota.dotaPickRecommendation.pickRecommender import (
+    recommend_picks,
+    load_counter_synergy_data,
+    load_safe_first_picks,
+)
 
 # ----------------------------------------------------------------------------#
 # Configs
@@ -39,6 +44,10 @@ debug_mode = True
 model_path = os.path.join(repo_root, "dota", "dota_win_predictor_model.npz")
 counter_lookup_path = os.path.join(repo_root, "dota", "hero_counter_lookup.csv")
 synergy_lookup_path = os.path.join(repo_root, "dota", "hero_synergy_lookup.csv")
+safe_first_picks_path = os.path.join(repo_root, "dota", "dotaPickRecommendation", "safe_first_picks.json")
+
+_pick_assets = None
+_pick_assets_lock = Lock()
 
 _win_predictor = None
 _predictor_lock = Lock()
@@ -65,18 +74,27 @@ def explore():
 # <button 1>
 @app.route("/suggest1", methods=["POST"])
 def suggest1():
-    r = request.get_json()
-    r["todo"] = "Please rename the button from Suggest1 and implement some functionality here.",
+    payload = request.get_json(silent=True) or {}
+    recommendations = _get_recommendations(payload, "radiant")
+    if "error" in recommendations:
+        return jsonify(recommendations), 400
+    response_html = _format_recommendations_html(
+        recommendations["side"], recommendations["recommendations"]
+    )
+    return response_html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
-    return jsonify(r)
 
 # <button 2>
 @app.route("/suggest2", methods=["POST"])
 def suggest2():
-    r = request.get_json()
-    r["todo"] = "Please rename the button from Suggest2 and implement some functionality here.",
-
-    return jsonify(r)
+    payload = request.get_json(silent=True) or {}
+    recommendations = _get_recommendations(payload, "dire")
+    if "error" in recommendations:
+        return jsonify(recommendations), 400
+    response_html = _format_recommendations_html(
+        recommendations["side"], recommendations["recommendations"]
+    )
+    return response_html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
 # <button 3>
@@ -162,6 +180,16 @@ def get_hero_stat_model():
     return hero_stat_model
 
 
+def _get_pick_assets():
+    global _pick_assets
+    with _pick_assets_lock:
+        if _pick_assets is None:
+            counter_matrix, synergy_matrix = load_counter_synergy_data(counter_lookup_path, synergy_lookup_path)
+            safe_first_picks = load_safe_first_picks(safe_first_picks_path)
+            _pick_assets = (counter_matrix, synergy_matrix, safe_first_picks)
+    return _pick_assets
+
+
 def _coerce_ids(values):
     coerced = []
     for value in values:
@@ -226,6 +254,41 @@ def _format_prediction_html(radiant_prob: float, dire_prob: float) -> str:
     """
 
 
+def _format_recommendations_html(side: str, heroes: list[dict]) -> str:
+    side_title = "Radiant" if side.lower() == "radiant" else "Dire"
+    accent_color = "#1f6feb" if side_title == "Radiant" else "#bb3a3a"
+    hero_rows = []
+    for rank, hero in enumerate(heroes, start=1):
+        hero_id = hero.get("id", 0)
+        hero_name = hero.get("name", f"Hero {hero_id}")
+        hero_img = url_for("static", filename=f"img/avatar-sb/{hero_id}.png")
+        hero_rows.append(
+            f"""
+            <div style='display:flex;align-items:center;gap:0.75rem;padding:0.65rem;border-radius:6px;background:#161b22;border:1px solid #1f2329;'>
+                <span style='width:2rem;text-align:center;font-weight:600;color:{accent_color};'>#{rank}</span>
+                <img src='{hero_img}' alt='{hero_name}' width='60' height='34' style='border-radius:4px;object-fit:cover;'>
+                <div>
+                    <div style='font-weight:600;font-size:1rem;'>{hero_name}</div>
+                    <div style='font-size:0.8rem;color:#8b949e;'>Hero ID {hero_id}</div>
+                </div>
+            </div>
+            """
+        )
+
+    heroes_html = "".join(hero_rows) if hero_rows else "<p>No recommendations available.</p>"
+    return f"""
+    <div style='font-family:"Segoe UI", Arial, sans-serif;max-width:420px;margin:0 auto;padding:1rem;border-radius:10px;background:#0d1117;color:#ffffff;box-shadow:0 12px 32px rgba(0,0,0,0.4);'>
+        <div style='text-align:center;margin-bottom:0.75rem;'>
+            <div style='font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;color:#8b949e;'>Suggested Picks</div>
+            <div style='font-size:1.5rem;font-weight:600;color:{accent_color};'>{side_title}</div>
+        </div>
+        <div style='display:flex;flex-direction:column;gap:0.6rem;'>
+            {heroes_html}
+        </div>
+    </div>
+    """
+
+
 def _get_win_predictor() -> DotaWinPredictor:
     global _win_predictor
     with _predictor_lock:
@@ -255,6 +318,34 @@ def _get_win_predictor() -> DotaWinPredictor:
 
             _win_predictor = predictor
     return _win_predictor
+
+
+def _get_recommendations(payload: dict, side: str) -> dict:
+    try:
+        radiant = _coerce_ids(payload.get("radiant", []))
+        dire = _coerce_ids(payload.get("dire", []))
+        bans = _coerce_ids(payload.get("bans", []))
+    except ValueError as exc:
+        return {"error": str(exc)}
+
+    counter_matrix, synergy_matrix, safe_first = _get_pick_assets()
+    recommended_ids = recommend_picks(
+        current_bans=bans,
+        current_side=side,
+        current_radiant_picks=radiant,
+        current_dire_picks=dire,
+        counter_matrix=counter_matrix,
+        synergy_matrix=synergy_matrix,
+        safe_first_picks=safe_first,
+        top_k=5,
+    )
+    recommended_ids = [int(hero_id) for hero_id in recommended_ids]
+
+    return {
+        "side": side,
+        "recommendations": _format_hero_list(recommended_ids),
+        "raw_ids": recommended_ids,
+    }
 
 
 if __name__ == '__main__':
