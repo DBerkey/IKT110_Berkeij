@@ -291,56 +291,18 @@ def _top_synergy_partners(hero_id: int, limit: int = 3) -> list[tuple[int, float
     if limit <= 0:
         return []
     _, synergy_matrix, _ = _get_pick_assets()
-    if synergy_matrix.size == 0:
+    if synergy_matrix.size == 0 or hero_id >= synergy_matrix.shape[0]:
         return []
 
-    row_ids, col_ids, hero_to_row = _get_synergy_index_maps()
-    row_idx = hero_to_row.get(hero_id)
-    if row_idx is None or row_idx >= synergy_matrix.shape[0]:
-        return []
-
-    row = synergy_matrix[row_idx]
+    row = synergy_matrix[hero_id]
     candidates = []
-    for col_idx, score in enumerate(row):
-        partner_id = col_ids[col_idx] if col_idx < len(col_ids) else None
-        if partner_id is None or partner_id == hero_id:
+    for partner_id, score in enumerate(row):
+        if partner_id == hero_id:
             continue
         candidates.append((partner_id, float(score)))
 
     candidates.sort(key=lambda item: item[1], reverse=True)
     return candidates[:limit]
-
-
-@lru_cache(maxsize=1)
-def _get_synergy_index_maps() -> tuple[list[int], list[int | None], dict[int, int]]:
-    """Map hero ids to their row/column indices using CSV headers."""
-    row_ids: list[int] = []
-    col_ids: list[int | None] = []
-    hero_to_row: dict[int, int] = {}
-
-    try:
-        with open(synergy_lookup_path, newline='', encoding='utf-8') as fp:
-            reader = csv.reader(fp)
-            header = next(reader, None)
-            if header:
-                for value in header[1:]:
-                    try:
-                        col_ids.append(int(value))
-                    except (TypeError, ValueError):
-                        col_ids.append(None)
-            for row in reader:
-                if not row:
-                    continue
-                try:
-                    hero_id = int(row[0])
-                except (TypeError, ValueError):
-                    continue
-                hero_to_row[hero_id] = len(row_ids)
-                row_ids.append(hero_id)
-    except FileNotFoundError:
-        return row_ids, col_ids, hero_to_row
-
-    return row_ids, col_ids, hero_to_row
 
 
 def _coerce_ids(values):
