@@ -23,6 +23,7 @@ if repo_root not in sys.path:
 from dota.dotaWinPredition.winPredictor import DotaWinPredictor, load_lookup_matrix
 from dota.dotaPickRecommendation.pickRecommender import (
     recommend_picks,
+    recommend_bans,
     load_counter_synergy_data,
     load_safe_first_picks,
 )
@@ -76,12 +77,7 @@ def explore():
 def suggest1():
     payload = request.get_json(silent=True) or {}
     recommendations = _get_recommendations(payload, "radiant")
-    if "error" in recommendations:
-        return jsonify(recommendations), 400
-    response_html = _format_recommendations_html(
-        recommendations["side"], recommendations["recommendations"]
-    )
-    return response_html, 200, {"Content-Type": "text/html; charset=utf-8"}
+    return _html_or_error(recommendations, heading="Suggested Picks")
 
 
 # <button 2>
@@ -89,12 +85,21 @@ def suggest1():
 def suggest2():
     payload = request.get_json(silent=True) or {}
     recommendations = _get_recommendations(payload, "dire")
-    if "error" in recommendations:
-        return jsonify(recommendations), 400
-    response_html = _format_recommendations_html(
-        recommendations["side"], recommendations["recommendations"]
-    )
-    return response_html, 200, {"Content-Type": "text/html; charset=utf-8"}
+    return _html_or_error(recommendations, heading="Suggested Picks")
+
+
+@app.route("/suggestBanRadiant", methods=["POST"])
+def suggest_ban_radiant():
+    payload = request.get_json(silent=True) or {}
+    recommendations = _get_ban_recommendations(payload, "radiant")
+    return _html_or_error(recommendations, heading="Suggested Bans")
+
+
+@app.route("/suggestBanDire", methods=["POST"])
+def suggest_ban_dire():
+    payload = request.get_json(silent=True) or {}
+    recommendations = _get_ban_recommendations(payload, "dire")
+    return _html_or_error(recommendations, heading="Suggested Bans")
 
 
 # <button 3>
@@ -254,7 +259,7 @@ def _format_prediction_html(radiant_prob: float, dire_prob: float) -> str:
     """
 
 
-def _format_recommendations_html(side: str, heroes: list[dict]) -> str:
+def _format_recommendations_html(side: str, heroes: list[dict], heading: str = "Suggested Picks") -> str:
     side_title = "Radiant" if side.lower() == "radiant" else "Dire"
     accent_color = "#1f6feb" if side_title == "Radiant" else "#bb3a3a"
     hero_rows = []
@@ -279,7 +284,7 @@ def _format_recommendations_html(side: str, heroes: list[dict]) -> str:
     return f"""
     <div style='font-family:"Segoe UI", Arial, sans-serif;max-width:420px;margin:0 auto;padding:1rem;border-radius:10px;background:#0d1117;color:#ffffff;box-shadow:0 12px 32px rgba(0,0,0,0.4);'>
         <div style='text-align:center;margin-bottom:0.75rem;'>
-            <div style='font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;color:#8b949e;'>Suggested Picks</div>
+            <div style='font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;color:#8b949e;'>{heading}</div>
             <div style='font-size:1.5rem;font-weight:600;color:{accent_color};'>{side_title}</div>
         </div>
         <div style='display:flex;flex-direction:column;gap:0.6rem;'>
@@ -287,6 +292,15 @@ def _format_recommendations_html(side: str, heroes: list[dict]) -> str:
         </div>
     </div>
     """
+
+
+def _html_or_error(payload: dict, heading: str) -> tuple:
+    if "error" in payload:
+        return jsonify(payload), 400
+    response_html = _format_recommendations_html(
+        payload["side"], payload["recommendations"], heading=heading
+    )
+    return response_html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
 def _get_win_predictor() -> DotaWinPredictor:
@@ -330,6 +344,34 @@ def _get_recommendations(payload: dict, side: str) -> dict:
 
     counter_matrix, synergy_matrix, safe_first = _get_pick_assets()
     recommended_ids = recommend_picks(
+        current_bans=bans,
+        current_side=side,
+        current_radiant_picks=radiant,
+        current_dire_picks=dire,
+        counter_matrix=counter_matrix,
+        synergy_matrix=synergy_matrix,
+        safe_first_picks=safe_first,
+        top_k=5,
+    )
+    recommended_ids = [int(hero_id) for hero_id in recommended_ids]
+
+    return {
+        "side": side,
+        "recommendations": _format_hero_list(recommended_ids),
+        "raw_ids": recommended_ids,
+    }
+
+
+def _get_ban_recommendations(payload: dict, side: str) -> dict:
+    try:
+        radiant = _coerce_ids(payload.get("radiant", []))
+        dire = _coerce_ids(payload.get("dire", []))
+        bans = _coerce_ids(payload.get("bans", []))
+    except ValueError as exc:
+        return {"error": str(exc)}
+
+    counter_matrix, synergy_matrix, safe_first = _get_pick_assets()
+    recommended_ids = recommend_bans(
         current_bans=bans,
         current_side=side,
         current_radiant_picks=radiant,

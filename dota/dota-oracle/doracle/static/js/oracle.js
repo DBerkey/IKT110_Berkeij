@@ -113,6 +113,15 @@ $(document).ready(function () {
     })
 
 
+    $("#suggestBanRadiant").click(function () {
+        requestSuggestion("/suggestBanRadiant")
+    })
+
+    $("#suggestBanDire").click(function () {
+        requestSuggestion("/suggestBanDire")
+    })
+
+
     $("#suggestBtn3").click(function () {
         if (radiant_pool.length == 5 && dire_pool.length == 5) {
             $.ajax({
