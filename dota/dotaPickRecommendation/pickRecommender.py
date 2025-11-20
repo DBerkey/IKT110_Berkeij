@@ -4,9 +4,8 @@ Date: 18-11-2025
 Descrition: Pick recommendation for drafting tool
 """
 
+from .dataLoader import load_match_data, load_counter_synergy_data, load_safe_first_picks, load_list_of_valid_heroes
 from __future__ import annotations
-
-from .dataLoader import load_counter_synergy_data, load_safe_first_picks
 import numpy as np
 
 
@@ -24,7 +23,7 @@ def _collect_scores(row: np.ndarray, indices: list[int]) -> list[float]:
 
 
 def recommend_picks(current_bans: list, current_side: str, current_radiant_picks: list, current_dire_picks: list, counter_matrix: np.ndarray, synergy_matrix: np.ndarray,
-                    safe_first_picks: list, top_k: int = 5) -> list:
+                    safe_first_picks: list, top_k: int = 5, valid_heroes: list = None) -> list:
     """
     Recommends hero picks based on current picks using counter and synergy matrices.
 
@@ -65,6 +64,11 @@ def recommend_picks(current_bans: list, current_side: str, current_radiant_picks
         scores[picked_hero] = -np.inf
 
     recommended_indices = np.argsort(scores)[-top_k:][::-1]
+
+    for idx in recommended_indices:
+        if idx not in valid_heroes:
+            scores[idx] = -np.inf
+
     recommended_heroes = [
         idx for idx in recommended_indices]
 
@@ -75,7 +79,8 @@ def recommend_bans(current_bans: list, current_side: str, current_radiant_picks:
                    counter_matrix: np.ndarray, synergy_matrix: np.ndarray, safe_first_picks: list[int], top_k: int = 5) -> list:
     """Suggest heroes to ban for the specified side."""
     num_heroes = counter_matrix.shape[0]
-    available = set(range(num_heroes)) - set(current_bans + current_radiant_picks + current_dire_picks)
+    available = set(range(num_heroes)) - set(current_bans +
+                                             current_radiant_picks + current_dire_picks)
     scores = np.zeros(num_heroes)
 
     side = current_side.lower()
@@ -87,13 +92,16 @@ def recommend_bans(current_bans: list, current_side: str, current_radiant_picks:
         target_opponents = current_dire_picks
 
     if not threaten_team and not target_opponents:
-        fallback = [hero_id for hero_id in safe_first_picks if hero_id in available]
+        fallback = [
+            hero_id for hero_id in safe_first_picks if hero_id in available]
         return fallback[:top_k]
 
     for hero_id in available:
         # Favor heroes that synergize with the opposing team and counter our current picks.
-        synergy_scores = _collect_scores(synergy_matrix[hero_id], threaten_team) if synergy_matrix.size else []
-        counter_scores = _collect_scores(counter_matrix[hero_id], target_opponents) if counter_matrix.size else []
+        synergy_scores = _collect_scores(
+            synergy_matrix[hero_id], threaten_team) if synergy_matrix.size else []
+        counter_scores = _collect_scores(
+            counter_matrix[hero_id], target_opponents) if counter_matrix.size else []
         synergy_avg = _average(synergy_scores)
         counter_avg = _average(counter_scores)
         # Heavier weight on counter pressure because bans typically remove hard counters.
