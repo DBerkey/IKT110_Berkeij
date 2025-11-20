@@ -179,8 +179,18 @@ class DotaWinPredictor:
     def load_model(self, filepath: str) -> None:
         """Loads the model parameters from a file."""
         data = np.load(filepath)
-        self.model.w = data['w']
-        self.model.b = data['b']
+        w = data['w']
+        b = data['b']
+
+        if w.shape[0] != self.model.w.shape[0]:
+            new_w = np.zeros_like(self.model.w)
+            n_copy = min(new_w.shape[0], w.shape[0])
+            new_w[:n_copy] = w[:n_copy]
+            self.model.w = new_w
+        else:
+            self.model.w = w
+
+        self.model.b = b
 
     def predict(self, radiant_heroes: List[int], dire_heroes: List[int]) -> float:
         """Predicts the probability of Radiant winning given hero selections."""
