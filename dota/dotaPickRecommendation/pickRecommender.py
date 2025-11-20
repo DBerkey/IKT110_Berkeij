@@ -4,12 +4,12 @@ Date: 18-11-2025
 Descrition: Pick recommendation for drafting tool
 """
 
-from dataLoader import load_match_data, load_counter_synergy_data, load_safe_first_picks
+from dataLoader import load_match_data, load_counter_synergy_data, load_safe_first_picks, load_list_of_valid_heroes
 import numpy as np
 
 
 def recommend_picks(current_bans: list, current_side: str, current_radiant_picks: list, current_dire_picks: list, counter_matrix: np.ndarray, synergy_matrix: np.ndarray,
-                    safe_first_picks: list, top_k: int = 5) -> list:
+                    safe_first_picks: list, top_k: int = 5, valid_heroes: list = None) -> list:
     """
     Recommends hero picks based on current picks using counter and synergy matrices.
 
@@ -50,6 +50,11 @@ def recommend_picks(current_bans: list, current_side: str, current_radiant_picks
         scores[picked_hero] = -np.inf
 
     recommended_indices = np.argsort(scores)[-top_k:][::-1]
+
+    for idx in recommended_indices:
+        if idx not in valid_heroes:
+            scores[idx] = -np.inf
+
     recommended_heroes = [
         idx for idx in recommended_indices]
 
@@ -68,7 +73,7 @@ if __name__ == "__main__":
     counter_matrix, synergy_matrix = load_counter_synergy_data(
         counter_csv, synergy_csv)
     safe_first_picks = load_safe_first_picks(first_pick_json)
-
+    valid_heroes = load_list_of_valid_heroes(
+        "dota\\dota-oracle\\doracle\\data\\heroes.json")
     recommendations = recommend_picks([75, 47, 67, 11, 23], "Radiant",
-                                      [1, 5, 10], [3, 2], counter_matrix, synergy_matrix, safe_first_picks, top_k=5)
-    print(f"Recommended hero picks: {recommendations}")
+                                      [1, 5, 10], [3, 2], counter_matrix, synergy_matrix, safe_first_picks, top_k=5, valid_heroes=valid_heroes)

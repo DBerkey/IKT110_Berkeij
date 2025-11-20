@@ -117,12 +117,29 @@ def load_safe_first_picks(json_path: str) -> List[int]:
     return safe_picks
 
 
+def load_list_of_valid_heroes(json_path: str) -> List[int]:
+    """
+    Loads a list of valid hero IDs from a JSON file.
+
+    Args:
+        json_path (str): Path to the JSON file containing valid hero IDs.
+    Returns:
+        List[int]: List of valid hero IDs.
+    """
+    import json
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    valid_heroes = list(map(int, data.keys()))
+    return valid_heroes
+
+
 if __name__ == "__main__":
     match_csv = "C:\\Users\\User\\Desktop\\new_ranked_matches.csv"
     player_csv = "C:\\Users\\User\\Desktop\\new_ranked_players.csv"
     counter_csv = "C:\\Users\\User\\Desktop\\hero_counter_lookup.csv"
     synergy_csv = "C:\\Users\\User\\Desktop\\hero_synergy_lookup.csv"
     first_pick_json = "dota\\dotaPickRecommendation\\safe_first_picks.json"
+    valid_heroes_json = "dota\\dota-oracle\\doracle\\data\\heroes.json"
     # features, labels, hero_count = load_match_data(match_csv, player_csv)
     # print(
     #    f"Loaded {features.shape[0]} matches with {hero_count} unique heroes.")

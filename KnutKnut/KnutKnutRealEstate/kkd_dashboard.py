@@ -303,12 +303,12 @@ app.layout = html.Div([
             html.Div([
                 html.H4("Year built:"),
                 dcc.Input(id="year", value="1990",
-                          type="number", debounce=True),
+                          type="number", min=1900, max=2025),
             ]),
             html.Div([
                 html.H4("Remodeled year (0 if never):"),
                 dcc.Input(id="remodeled", value="2015",
-                          type="number", debounce=True),
+                          type="number", min=0, max=2025),
             ]),
             html.Div([
                 html.H4("Color:"),
@@ -320,48 +320,54 @@ app.layout = html.Div([
             ]),
             html.Div([
                 html.H4("Size (m²):"),
-                dcc.Input(id="size", value="80", type="number"),
+                dcc.Input(id="size", value="80", type="number", min=0),
             ]),
             html.Div([
                 html.H4("Bathrooms:"),
-                dcc.Input(id="bathrooms", value="1", type="number"),
+                dcc.Input(id="bathrooms", value="1", type="number", min=0),
             ]),
             html.Div([
                 html.H4("Kitchens:"),
-                dcc.Input(id="kitchens", value="1", type="number"),
+                dcc.Input(id="kitchens", value="1", type="number", min=0),
             ]),
             html.Div([
                 html.H4("External storage (m²):"),
-                dcc.Input(id="external_storage_m2", value="5", type="number"),
+                dcc.Input(id="external_storage_m2",
+                          value="5", type="number", min=0),
             ]),
             html.Div([
                 html.H4("Lot width:"),
-                dcc.Input(id="lot_w", value="20", type="number"),
+                dcc.Input(id="lot_w", value="20", type="number", min=0),
             ]),
             html.Div([
                 html.H4("Storage rating (1-10):"),
-                dcc.Input(id="storage_rating", value="5", type="number"),
+                dcc.Input(id="storage_rating", value="5",
+                          type="number", min=1, max=10),
             ]),
             html.Div([
                 html.H4("Sun factor (0-1):"),
-                dcc.Input(id="sun_factor", value="0.6", type="number"),
+                dcc.Input(id="sun_factor", value="0.6",
+                          type="number", min=0, max=1),
             ]),
             html.Div([
                 html.H4("Condition rating (1-10):"),
-                dcc.Input(id="condition_rating", value="6", type="number"),
+                dcc.Input(id="condition_rating", value="6",
+                          type="number", min=1, max=10),
             ]),
             html.Div([
                 html.H4("Days on market (for scenario):"),
-                dcc.Input(id="days_on_marked", value="10", type="number"),
+                dcc.Input(id="days_on_marked", value="10",
+                          type="number", min=0),
             ]),
             html.Div([
                 html.H4("Rooms (count):"),
-                dcc.Input(id="rooms_count", value="3", type="number"),
+                dcc.Input(id="rooms_count", value="3", type="number", min=0),
             ]),
             html.Div([
                 html.H4("Put to market in:"),
                 dcc.Dropdown(
-                    ["jan", "feb", "march", "april", "november"],
+                    ["jan", "feb", "march", "april", "may", "june", "july",
+                        "august", "september", "october", "november", "december"],
                     "november",
                     id="month-to-marked",
                 ),
