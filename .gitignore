@@ -215,4 +215,4 @@ analysis_output/
 # csv
 *.csv
 *.zip
-*.jsonl
+*.jsonln

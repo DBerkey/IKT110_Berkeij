@@ -89,7 +89,7 @@ def auction_expected_value(auction: Dict[str, int]) -> float:
 class AdaptiveAuctionAgent:
 	"""Implements the bidding model described in the prompt."""
 
-	WINDOW_SIZE = 200
+	WINDOW_SIZE = 30
 	SMALL_EPS = 1e-6
 	GOLD_TO_POINT_RATIO = 0.5
 	POINT_LEAD_THRESHOLD = 4
