@@ -122,10 +122,10 @@ class AdaptiveAuctionAgent:
 	}
 
 	value_factors = {
-		PHASE_EARLY: 0.95,
-		PHASE_MID: 1.05,
-		PHASE_LATE: 1.20,
-		PHASE_FINISH: 1.30,
+		PHASE_EARLY: 2.0,
+		PHASE_MID: 2.6,
+		PHASE_LATE: 3.4,
+		PHASE_FINISH: 4.0,
 	}
 
 	ev_percentiles = {
@@ -144,6 +144,8 @@ class AdaptiveAuctionAgent:
 		self.my_gold = 0.0
 		self.my_points = 0.0
 		self.agent_id = ""
+		self.median_points = 0.0
+		self.points_deficit = 0.0
 
 	# ------------------------------------------------------------------
 	# Public entry point
@@ -172,6 +174,8 @@ class AdaptiveAuctionAgent:
 
 		effective_players = max(1.0, self._estimate_effective_players())
 		median_points = self._median_points(states.values())
+		self.median_points = median_points
+		self.points_deficit = median_points - self.my_points
 		phase = self._determine_phase(round_number, effective_players, self.my_points, median_points)
 
 		q1, q2, q3 = approx_quantiles(self.win_hist)
@@ -238,7 +242,7 @@ class AdaptiveAuctionAgent:
 				return 0
 			target_bid = big_target if ev >= ev_threshold * 1.1 else small_target
 
-		value_cap = ev * self.value_factors[phase]
+		value_cap = ev * self._value_multiplier(phase)
 		bid = min(target_bid, value_cap)
 
 		max_affordable = self.my_gold * self.max_bid_fraction[phase]
@@ -272,6 +276,8 @@ class AdaptiveAuctionAgent:
 	def _decide_pool_purchase(self, pool_priority: float, phase: str) -> int:
 		if self.my_points <= 0 or pool_priority <= 0:
 			return 0
+		if self.points_deficit >= 0:
+			return 0
 
 		phase_bias = {
 			PHASE_EARLY: 0.05,
@@ -298,6 +304,16 @@ class AdaptiveAuctionAgent:
 			return sample_list[lower]
 		weight = idx - lower
 		return sample_list[lower] * (1 - weight) + sample_list[upper] * weight
+
+	def _value_multiplier(self, phase: str) -> float:
+		base = self.value_factors.get(phase, self.value_factors[PHASE_LATE])
+		base = max(base, 2.0)
+		if self.points_deficit > 0:
+			base += min(6.0, self.points_deficit / 4.0)
+		if self.my_gold > self.WEALTH_NORM:
+			surplus_ratio = (self.my_gold - self.WEALTH_NORM) / self.WEALTH_NORM
+			base += min(3.0, surplus_ratio)
+		return base
 
 	# ------------------------------------------------------------------
 	# State bookkeeping

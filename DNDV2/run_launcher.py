@@ -17,7 +17,7 @@ from typing import Dict, List, Optional
 # Configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_ROUNDS = 200
+DEFAULT_ROUNDS = 1000
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 8000
 PLAY_TOKEN = "play123"
@@ -27,6 +27,9 @@ GAME_TOKEN = "play123"
 AGENT_CONFIGS: List[Dict[str, object]] = [
     {"name": "Adaptive v1", "path": "dnd_agents/run_adaptive_v1.py", "enabled": True},
     {"name": "Aggressive Bot", "path": "dnd_agents/run_aggressive_bot.py", "enabled": True},
+    {"name": "Aggressive Debt Bot", "path": "dnd_agents/run_aggressive_debt_bot.py", "enabled": True},
+    {"name": "Smart Ultimate", "path": "dnd_agents/run_smart_ultimate_agent.py", "enabled": True},
+    {"name": "Balanced Bot", "path": "dnd_agents/run_balanced_bot.py", "enabled": True},
     {"name": "Random Single", "path": "dnd_auction_game/example_agents/agent_random_single.py", "enabled": True},
     {"name": "Random Walk", "path": "dnd_auction_game/example_agents/agent_random_walk.py", "enabled": True},
     {"name": "Tiny Bid", "path": "dnd_auction_game/example_agents/agent_tiny_bid.py", "enabled": True},
