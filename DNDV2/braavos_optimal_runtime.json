@@ -1,0 +1,7 @@
+{
+  "force_optimal": false,
+  "spend_fraction_scale": 0.45,
+  "pool_spend_multiplier": 0.1,
+  "auction_aggression_scale": 0.95,
+  "reserve_padding_scale": 0.9
+}
