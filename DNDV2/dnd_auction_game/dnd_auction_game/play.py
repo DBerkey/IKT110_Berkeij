@@ -38,9 +38,10 @@ class AuctionGameRunner:
         print("<done>")
             
         
-if __name__ == "__main__":    
+def main() -> None:
     host = "localhost"
-    
+    port = 8000
+
     n_rounds = 12
     if len(sys.argv) >= 2:
         n_rounds = int(sys.argv[1])
@@ -49,12 +50,22 @@ if __name__ == "__main__":
         play_token = sys.argv[2]
     else:
         play_token = "play123"
-        
-    runner = AuctionGameRunner(host, n_rounds=n_rounds, play_token=play_token)
-    print("Running the game for: {} rounds.".format(n_rounds))
+
+    if len(sys.argv) >= 4:
+        host = sys.argv[3]
+
+    if len(sys.argv) >= 5:
+        port = int(sys.argv[4])
+
+    runner = AuctionGameRunner(host, play_token=play_token, n_rounds=n_rounds, port=port)
+    print("Running the game for: {} rounds on {}:{}.".format(n_rounds, host, port))
     runner.run()
     
     print("<game is done>")
+
+
+if __name__ == "__main__":
+    main()
 
 
 

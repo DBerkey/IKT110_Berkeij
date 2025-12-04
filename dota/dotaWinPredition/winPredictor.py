@@ -207,9 +207,9 @@ def main() -> None:
     counter_lookup = load_lookup_matrix(heroCounters, n_heroes)
     synergy_lookup = load_lookup_matrix(heroSynergy, n_heroes)
 
-    learning_rates = [0.05, 0.01, 0.005, 0.15, 0.1]
+    learning_rates = [0.05]
     l2_values = [0.0]
-    epoch_values = [10, 20, 30, 40, 50]
+    epoch_values = [40]
 
     best_acc = 0.0
     best_params: Tuple[float, float, int] | None = None

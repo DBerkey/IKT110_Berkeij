@@ -22,7 +22,18 @@ from typing import Any, Deque, Dict, Iterable, List, Tuple
 class BraavosPhoenixAgent:
     BUCKET_SIZE = 5
     MIN_RATIO = 8.0
-    MAX_RATIO = 90.0
+    MAX_RATIO = 180.0
+    GLOBAL_RATIO_MIN = 12.0
+    GLOBAL_RATIO_MAX = 95.0
+    MAX_GOLD_PER_EXPECTED_POINT = 55.0
+    RECENT_RATIO_CAP = 160.0
+    RECENT_RATIO_MULT = 1.6
+    MAX_POOL_SPEND_RATIO = 0.03
+    MAX_POOL_SPEND_POINTS = 250
+    LOSS_RATIO_MAX = 4.0
+    MAX_INFLATION_MULT = 2.75
+    LATE_PROGRESS_THRESHOLD = 0.65
+    LIQUIDITY_OVERRIDE_GOLD_RATIO = 0.45
 
     BURST_STALL_ROUNDS = 40
     BURST_WINRATE = 0.18
@@ -37,16 +48,19 @@ class BraavosPhoenixAgent:
         self._global_ratio = 27.0
         self._gold_per_point_ratio = 23.0
         self._pool_volume_ema = 0.0
+        self._pool_price_ema = 0.0
+        self._win_ratios: Deque[float] = deque(maxlen=200)
         self._recent_bids: Deque[int] = deque(maxlen=400)
         self._recent_wins: Deque[int] = deque(maxlen=400)
         self._last_points = 0.0
         self._last_gain_round = 0
+        self._loss_ratio_ema = 1.0
 
     # ------------------------------------------------------------------
     def make_bid(
         self,
         agent_id: str,
-        round: int,
+        round_number: int,
         states: Dict[str, Dict[str, float]],
         auctions: Dict[str, Dict[str, Any]],
         prev_auctions: Dict[str, Dict[str, Any]],
@@ -57,7 +71,7 @@ class BraavosPhoenixAgent:
         if agent_id not in states:
             return {"bids": {}, "pool": 0}
 
-        self._ingest_prev_round(prev_auctions, round, agent_id)
+        self._ingest_prev_round(prev_auctions, round_number, agent_id)
 
         my_state = states[agent_id]
         gold = float(my_state.get("gold", 0) or 0)
@@ -72,14 +86,14 @@ class BraavosPhoenixAgent:
         lead = max(0.0, points - median_points)
         table_size = max(len(states), 1)
 
-        total_rounds = round + len(bank_state.get("gold_income_per_round", []))
-        progress = 0.0 if total_rounds <= 1 else round / max(total_rounds - 1, 1)
+        total_rounds = round_number + len(bank_state.get("gold_income_per_round", []))
+        progress = 0.0 if total_rounds <= 1 else round_number / max(total_rounds - 1, 1)
 
         interest_rate = (bank_state.get("bank_interest_per_round") or [1.0])[0]
         bank_limit = (bank_state.get("bank_limit_per_round") or [0])[0]
 
         win_rate = self._recent_win_rate()
-        stall_rounds = self._update_stall(round, points)
+        stall_rounds = self._update_stall(round_number, points)
         burst_mode = stall_rounds >= self.BURST_STALL_ROUNDS and win_rate <= self.BURST_WINRATE
 
         points_floor = self._points_floor(points, median_points, leader_points, progress)
@@ -94,6 +108,10 @@ class BraavosPhoenixAgent:
             spend_fraction += 0.12
         if burst_mode:
             spend_fraction += 0.18
+        if progress >= self.LATE_PROGRESS_THRESHOLD and deficit > 0:
+            spend_fraction += min(0.2, deficit / 4500.0)
+        if win_rate < 0.08:
+            spend_fraction += 0.05
         spend_fraction += self._income_pressure(bank_state)
         spend_fraction -= min(0.12, max(0.0, interest_rate - 1.0) * 2.2)
         spend_fraction = self._clamp(spend_fraction, 0.2, 0.96)
@@ -105,6 +123,8 @@ class BraavosPhoenixAgent:
         reserve = max(reserve, interest_padding)
         if burst_mode:
             reserve *= 0.6
+        if progress >= self.LATE_PROGRESS_THRESHOLD and deficit > 600:
+            reserve *= 0.65
         reserve = min(reserve, gold)
 
         bids: Dict[str, int] = {}
@@ -167,6 +187,10 @@ class BraavosPhoenixAgent:
             total_prev_pool,
             0.2,
         )
+        if total_prev_pool > 0:
+            realized_price = pool / max(float(total_prev_pool), 1.0)
+            base_price = self._pool_price_ema or realized_price
+            self._pool_price_ema = self._blend(base_price, realized_price, 0.3)
 
         pool_purchase = self._decide_pool_purchase(
             points=points,
@@ -174,13 +198,13 @@ class BraavosPhoenixAgent:
             lead=lead,
             deficit=deficit,
             pool=pool,
-            prev_pool_buys=prev_pool_buys,
             table_size=table_size,
             progress=progress,
             gold=gold,
             median_gold=median_gold,
             burst_mode=burst_mode,
             win_rate=win_rate,
+            price_hint=self._pool_price_ema,
         )
 
         return {"bids": bids, "pool": pool_purchase}
@@ -210,6 +234,9 @@ class BraavosPhoenixAgent:
             if ev > 0:
                 ratio = self._clamp(win_bid / max(ev, 1.0), self.MIN_RATIO, self.MAX_RATIO)
                 self._global_ratio = self._blend(self._global_ratio, ratio, 0.18)
+                self._global_ratio = self._clamp(
+                    self._global_ratio, self.GLOBAL_RATIO_MIN, self.GLOBAL_RATIO_MAX
+                )
 
             reward = float(info.get("reward", 0) or 0)
             if reward > 0:
@@ -217,6 +244,7 @@ class BraavosPhoenixAgent:
                 self._gold_per_point_ratio = self._blend(
                     self._gold_per_point_ratio, gold_per_point, 0.1
                 )
+                self._win_ratios.append(win_bid / max(reward, 1.0))
 
             bucket = int(ev // self.BUCKET_SIZE) * self.BUCKET_SIZE
             avg, samples = self._bucket_price.get(bucket, (win_bid, 0))
@@ -225,11 +253,16 @@ class BraavosPhoenixAgent:
             self._bucket_price[bucket] = (new_avg, min(samples + 1, 200))
             self._win_prices.append(win_bid)
 
+            my_bid_value = None
+            my_position = None
             for position, bid in enumerate(bids):
                 if bid.get("a_id") == agent_id:
                     self._recent_bids.append(1)
                     self._recent_wins.append(1 if position == 0 else 0)
+                    my_bid_value = float(bid.get("gold", 0) or 0)
+                    my_position = position
                     break
+            self._update_loss_ratio(win_bid, my_bid_value, my_position)
 
         self._last_processed_round = target_round
 
@@ -279,8 +312,11 @@ class BraavosPhoenixAgent:
             aggression *= 1.1
 
         bid = predicted * aggression
+        bid *= self._inflation_boost(progress, deficit, win_rate)
         floor = ev * max(6.5, 0.6 * self._global_ratio)
-        cap = ev * self._global_ratio * (1.65 + 0.4 * progress + (0.2 if burst_mode else 0))
+        cap = ev * self._global_ratio * (1.9 + 0.55 * progress + (0.25 if burst_mode else 0))
+        ratio_cap = self._recent_ratio_cap()
+        cap = min(cap, ev * ratio_cap)
         return max(floor, min(cap, bid))
 
     def _auction_priority(self, ev: float, predicted: float, max_ev: float, progress: float) -> float:
@@ -299,29 +335,37 @@ class BraavosPhoenixAgent:
         lead: float,
         deficit: float,
         pool: int,
-        prev_pool_buys: Dict[str, int],
         table_size: int,
         progress: float,
         gold: float,
         median_gold: float,
         burst_mode: bool,
         win_rate: float,
+        price_hint: float,
     ) -> int:
-        if pool < self.MIN_POOL or points <= points_floor:
+        liquidity_override = (
+            gold < median_gold * self.LIQUIDITY_OVERRIDE_GOLD_RATIO and progress > 0.55
+        )
+        if pool < self.MIN_POOL or (points <= points_floor and not liquidity_override):
             return 0
 
-        gold_hungry = gold < median_gold * 0.9
-        buy_signal = burst_mode or gold_hungry or win_rate < 0.15
+        hunger_floor = max(2500.0, median_gold * 0.6)
+        gold_hungry = gold < hunger_floor
+        buy_signal = burst_mode or gold_hungry or win_rate < 0.15 or liquidity_override
         if not buy_signal:
             return 0
 
         expected_total = max(self._pool_volume_ema, table_size * 2.5)
-        value_per_point = pool / max(1.0, expected_total)
+        if price_hint > 0:
+            value_per_point = price_hint
+        else:
+            value_per_point = pool / max(1.0, expected_total)
         roi_gate = self._gold_per_point_ratio * (1.0 if gold_hungry else 1.15)
         if value_per_point < roi_gate:
             return 0
 
-        surplus_points = max(0.0, points - max(points_floor, lead * 0.4 + 200))
+        effective_floor = points_floor * (0.9 if liquidity_override else 1.0)
+        surplus_points = max(0.0, points - max(effective_floor, lead * 0.4 + 200))
         if surplus_points <= 0:
             return 0
 
@@ -338,6 +382,9 @@ class BraavosPhoenixAgent:
         if spend <= 0:
             return 0
 
+        spend = min(spend, int(points * self.MAX_POOL_SPEND_RATIO))
+        spend = min(spend, self.MAX_POOL_SPEND_POINTS)
+
         keep_buffer = max(50, points_floor * 0.06)
         spend = min(spend, int(points - keep_buffer))
         return max(spend, 0)
@@ -347,6 +394,42 @@ class BraavosPhoenixAgent:
         if not self._recent_bids:
             return 0.0
         return (sum(self._recent_wins) + 1) / (len(self._recent_bids) + 2)
+
+    def _recent_ratio_cap(self) -> float:
+        if not self._win_ratios:
+            return self.MAX_GOLD_PER_EXPECTED_POINT
+        median_ratio = median(self._win_ratios)
+        dynamic = median_ratio * self.RECENT_RATIO_MULT
+        return self._clamp(dynamic, self.MAX_GOLD_PER_EXPECTED_POINT, self.RECENT_RATIO_CAP)
+
+    def _update_loss_ratio(
+        self,
+        win_bid: float,
+        my_bid: float | None,
+        my_position: int | None,
+    ) -> None:
+        if my_bid is None or my_bid <= 0 or my_position is None:
+            return
+        if my_position == 0:
+            target = 1.0
+            weight = 0.2
+        else:
+            ratio = self._clamp(win_bid / max(my_bid, 1.0), 1.0, self.LOSS_RATIO_MAX)
+            target = ratio
+            weight = 0.18 if ratio > 1.05 else 0.08
+        self._loss_ratio_ema = self._blend(self._loss_ratio_ema, target, weight)
+
+    def _inflation_boost(self, progress: float, deficit: float, win_rate: float) -> float:
+        boost = 1.0
+        if self._loss_ratio_ema > 1.02:
+            boost *= min(self._loss_ratio_ema ** 0.85, self.MAX_INFLATION_MULT)
+        if progress >= self.LATE_PROGRESS_THRESHOLD:
+            boost *= 1.0 + min(0.45, (progress - self.LATE_PROGRESS_THRESHOLD) * 0.9)
+        if deficit > 0:
+            boost *= 1.0 + min(0.4, deficit / 5000.0)
+        if win_rate < 0.08:
+            boost *= 1.2
+        return boost
 
     def _update_stall(self, round_number: int, points: float) -> int:
         if points > self._last_points:

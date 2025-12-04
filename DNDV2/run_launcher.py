@@ -37,11 +37,25 @@ AGENT_CONFIGS: List[Dict[str, object]] = [
     {"name": "Braavos Sentinel", "path": "dnd_agents/run_braavos_sentinel_agent.py", "enabled": True},
     {"name": "Braavos Phoenix", "path": "dnd_agents/run_braavos_phoenix_agent.py", "enabled": True},
     {"name": "Braavos Learning", "path": "dnd_agents/run_braavos_learning_agent.py", "enabled": True},
-    {"name": "Braavos lockdown", "path": "dnd_agents/run_braavos_lockdown_agent.py", "enabled": False},
+    {"name": "Braavos lockdown", "path": "dnd_agents/run_braavos_lockdown_agent.py", "enabled": True},
+    {"name": "Braavos Centurion", "path": "dnd_agents/run_braavos_centurion_agent.py", "enabled": True},
+    {"name": "Braavos Legion", "path": "dnd_agents/run_braavos_legion_agent.py", "enabled": True},
     {"name": "Simple Mean Bidder", "path": "dnd_agents/run_simple_mean_bidder_agent.py", "enabled": True},
     {"name": "Pool Mean Bidder", "path": "dnd_agents/run_pool_mean_bidder_agent.py", "enabled": True},
     {"name": "Fixed Spread Bidder", "path": "dnd_agents/run_fixed_spread_bidder_agent.py", "enabled": True},
     {"name": "Random Splash Bidder", "path": "dnd_agents/run_random_splash_bidder_agent.py", "enabled": True},
+    {"name": "Better mean Bidder", "path": "dnd_agents/run_better_mean_bidder_agent.py", "enabled": True},
+    {"name": "Neural Bidder", "path": "dnd_agents/run_neural_bidder_agent.py", "enabled": True},
+    {"name": "agent_maxi", "path": "dnd_agents/agent_maxi.py", "enabled": True},
+    {"name": "agent_victor", "path": "dnd_agents/agent_run_victor.py", "enabled": True},
+    {"name": "agent_third", "path": "dnd_agents/agent_third.py", "enabled": True},
+    {"name": "agent_final_controlled", "path": "dnd_agents/agent_final_controlled.py", "enabled": True},
+    {"name": "agent_aggressive_spender", "path": "dnd_agents/agent_aggressive_spender.py", "enabled": True},
+    {"name": "vinner1", "path": "dnd_agents/vinner1.py", "enabled": True},
+    {"name": "run_logic", "path": "dnd_agents/run.py", "enabled": True},
+    {"name": "Compound Crusher", "path": "dnd_agents/run_compound_crusher_agent.py", "enabled": True},
+    {"name": "Compound Crusher v2", "path": "dnd_agents/melk.py", "enabled": True},
+    {"name": "Moha_2", "path": "dnd_agents/run_2.py", "enabled": True},
 ]
 
 
@@ -76,7 +90,7 @@ class GameLauncher:
             })
         return resolved
 
-    def _start_server(self, host: str, port: int) -> bool:
+    def _start_server(self, host: str, port: int) -> bool: 
         if self.server_process and self.server_process.poll() is None:
             print("[INFO] Server already running")
             return True
@@ -161,6 +175,7 @@ class GameLauncher:
         return True
 
     def _run_game(self, rounds: int, host: str) -> bool:
+        time.sleep(15) 
         cmd = [
             sys.executable,
             "-m",
