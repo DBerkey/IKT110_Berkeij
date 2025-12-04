@@ -31,8 +31,17 @@ AGENT_CONFIGS: List[Dict[str, object]] = [
     {"name": "Smart Ultimate", "path": "dnd_agents/run_smart_ultimate_agent.py", "enabled": True},
     {"name": "Balanced Bot", "path": "dnd_agents/run_balanced_bot.py", "enabled": True},
     {"name": "Random Single", "path": "dnd_auction_game/example_agents/agent_random_single.py", "enabled": True},
-    {"name": "Random Walk", "path": "dnd_auction_game/example_agents/agent_random_walk.py", "enabled": True},
     {"name": "Tiny Bid", "path": "dnd_auction_game/example_agents/agent_tiny_bid.py", "enabled": True},
+    {"name": "Interest Split", "path": "dnd_agents/run_interest_split_agent.py", "enabled": True},
+    {"name": "Braavos Optimal", "path": "dnd_agents/run_braavos_optimal_agent.py", "enabled": True},
+    {"name": "Braavos Sentinel", "path": "dnd_agents/run_braavos_sentinel_agent.py", "enabled": True},
+    {"name": "Braavos Phoenix", "path": "dnd_agents/run_braavos_phoenix_agent.py", "enabled": True},
+    {"name": "Braavos Learning", "path": "dnd_agents/run_braavos_learning_agent.py", "enabled": True},
+    {"name": "Braavos lockdown", "path": "dnd_agents/run_braavos_lockdown_agent.py", "enabled": False},
+    {"name": "Simple Mean Bidder", "path": "dnd_agents/run_simple_mean_bidder_agent.py", "enabled": True},
+    {"name": "Pool Mean Bidder", "path": "dnd_agents/run_pool_mean_bidder_agent.py", "enabled": True},
+    {"name": "Fixed Spread Bidder", "path": "dnd_agents/run_fixed_spread_bidder_agent.py", "enabled": True},
+    {"name": "Random Splash Bidder", "path": "dnd_agents/run_random_splash_bidder_agent.py", "enabled": True},
 ]
 
 

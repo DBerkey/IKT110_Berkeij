@@ -146,6 +146,8 @@ class AdaptiveAuctionAgent:
 		self.agent_id = ""
 		self.median_points = 0.0
 		self.points_deficit = 0.0
+		self.recent_win_avg = 0.0
+		self.recent_win_high = 0.0
 
 	# ------------------------------------------------------------------
 	# Public entry point
@@ -180,9 +182,9 @@ class AdaptiveAuctionAgent:
 
 		q1, q2, q3 = approx_quantiles(self.win_hist)
 		iqr = max(q3 - q1, self.SMALL_EPS)
-		small_target = q3 + 0.3 * iqr
-		big_target = q3 + 0.9 * iqr
-		snipe_target = q3 + 1.6 * iqr
+		small_target = max(q3 + 0.3 * iqr, self.recent_win_avg * 1.05)
+		big_target = max(q3 + 0.9 * iqr, self.recent_win_high * 1.05)
+		snipe_target = max(q3 + 1.6 * iqr, self.recent_win_high * 1.20)
 
 		pool_priority = self._pool_priority(pool, phase, effective_players)
 
@@ -191,9 +193,10 @@ class AdaptiveAuctionAgent:
 
 		bids: Dict[str, int] = {}
 		for auction_id, auction in auctions.items():
+			ev = ev_by_auction[auction_id]
 			bid = self._compute_bid_for_auction(
 				auction=auction,
-				ev=ev_by_auction[auction_id],
+				ev=ev,
 				pool=pool,
 				phase=phase,
 				effective_players=effective_players,
@@ -234,7 +237,8 @@ class AdaptiveAuctionAgent:
 		if pool_focus:
 			min_pool_points_gain = 0.5
 			if pool_priority >= min_pool_points_gain:
-				target_bid = snipe_target + iqr + pool_priority
+				pool_boost = min(250.0, pool_priority * 50.0)
+				target_bid = snipe_target + iqr + pool_boost
 			else:
 				target_bid = 0.0
 		else:
@@ -242,15 +246,26 @@ class AdaptiveAuctionAgent:
 				return 0
 			target_bid = big_target if ev >= ev_threshold * 1.1 else small_target
 
-		value_cap = ev * self._value_multiplier(phase)
-		bid = min(target_bid, value_cap)
+		value_cap = ev * self._value_multiplier(phase, ev)
+		bid = max(target_bid, self._bid_floor(ev))
+		bid = min(bid, value_cap)
 
-		max_affordable = self.my_gold * self.max_bid_fraction[phase]
+		phase_max = self.max_bid_fraction[phase]
+		if self.points_deficit > 0:
+			phase_max = min(0.98, phase_max + min(0.2, self.points_deficit / 20.0))
+		max_affordable = self.my_gold * phase_max
 		bid = min(bid, max_affordable)
 
-		min_reserve = self.my_gold * self.reserve_fraction[phase]
+		phase_reserve = self.reserve_fraction[phase]
+		if self.points_deficit > 0:
+			phase_reserve = max(0.02, phase_reserve - min(0.2, self.points_deficit / 25.0))
+		min_reserve = self.my_gold * phase_reserve
 		if self.my_gold - bid < min_reserve:
 			bid = max(0.0, self.my_gold - min_reserve)
+
+		rarity = float(auction.get("rarity", 1))
+		if rarity > 1:
+			bid *= 1 + min(0.12, (rarity - 1) * 0.03)
 
 		noise = self.random.uniform(-0.02, 0.02)
 		bid *= 1 + noise
@@ -281,15 +296,15 @@ class AdaptiveAuctionAgent:
 
 		phase_bias = {
 			PHASE_EARLY: 0.05,
-			PHASE_MID: 0.10,
-			PHASE_LATE: 0.20,
-			PHASE_FINISH: 0.25,
+			PHASE_MID: 0.08,
+			PHASE_LATE: 0.14,
+			PHASE_FINISH: 0.20,
 		}[phase]
-
-		desired_points = pool_priority * phase_bias
-		spend_cap = max(0, int(desired_points))
-		spend = min(int(self.my_points), spend_cap)
-		return spend
+		aggression = min(0.25, max(0.0, -self.points_deficit) / 40.0)
+		pool_pressure = min(0.25, pool_priority / 2000.0)
+		spend_ratio = min(0.5, phase_bias + aggression + pool_pressure)
+		spend = int(self.my_points * spend_ratio)
+		return max(0, spend)
 
 	def _ev_threshold_for_phase(self, phase: str, samples: Iterable[float]) -> float:
 		sample_list = sorted(samples)
@@ -305,16 +320,25 @@ class AdaptiveAuctionAgent:
 		weight = idx - lower
 		return sample_list[lower] * (1 - weight) + sample_list[upper] * weight
 
-	def _value_multiplier(self, phase: str) -> float:
+	def _value_multiplier(self, phase: str, ev: float) -> float:
 		base = self.value_factors.get(phase, self.value_factors[PHASE_LATE])
-		base = max(base, 2.0)
+		if ev >= 20:
+			base += (ev - 20) / 4.0
 		if self.points_deficit > 0:
 			base += min(6.0, self.points_deficit / 4.0)
 		if self.my_gold > self.WEALTH_NORM:
 			surplus_ratio = (self.my_gold - self.WEALTH_NORM) / self.WEALTH_NORM
 			base += min(3.0, surplus_ratio)
-		return base
+		return min(base, 15.0)
 
+	def _bid_floor(self, ev: float) -> float:
+		floor = ev * 1.15
+		if ev >= 25:
+			floor += (ev - 25) * 3.0
+		floor = max(floor, self.recent_win_avg * 0.9)
+		if self.points_deficit > 0:
+			floor += min(150.0, self.points_deficit * 5.0)
+		return floor
 	# ------------------------------------------------------------------
 	# State bookkeeping
 	# ------------------------------------------------------------------
@@ -333,6 +357,15 @@ class AdaptiveAuctionAgent:
 			winner_id = str(winning_bid.get("a_id", ""))
 			self.win_hist.push(bid_value)
 			self._register_win(winner_id, bid_value, target_round)
+
+		hist_list = self.win_hist.to_list()
+		if hist_list:
+			recent = hist_list[-min(10, len(hist_list)) :]
+			self.recent_win_avg = sum(recent) / len(recent)
+			self.recent_win_high = max(recent)
+		else:
+			self.recent_win_avg = 0.0
+			self.recent_win_high = 0.0
 
 		self.last_sync_round = target_round
 
